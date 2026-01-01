@@ -4,8 +4,8 @@ const fs = require('fs').promises;
 const path = require('path');
 const { exec } = require('child_process');
 
-async function runProjectKickoff() {
-  console.log('Project kickoff triggered!');
+async function runCreateSpec() {
+  console.log('Create spec triggered!');
   const issue = github.context.payload.issue;
   if (!issue) {
     core.setFailed('Could not find issue in context.');
@@ -106,7 +106,7 @@ async function runNextTask() {
   const planPath = path.join(specKitPath, 'plan.md');
   const planContent = await fs.readFile(planPath, 'utf8');
   const beadComment = `<!-- bead:${issueId} -->`;
-  const sectionRegex = new RegExp(`(##.*${beadComment})\\n([\\s\\S]*?)(?=\\n##|$)`);
+  const sectionRegex = new RegExp(`(##.*${beadComment})\\n([\\s\S]*?)(?=\\n##|$)`);
   const match = planContent.match(sectionRegex);
 
   if (!match) {
@@ -142,12 +142,12 @@ async function run() {
     const context = github.context;
     if (context.eventName === 'issues' && context.payload.action === 'opened') {
       const issue = context.payload.issue;
-      const isKickoff = issue.labels.some(label => label.name === 'prodmill-kickoff');
+      const isCreateSpec = issue.labels.some(label => label.name === 'create-spec');
 
-      if (isKickoff) {
-        await runProjectKickoff();
+      if (isCreateSpec) {
+        await runCreateSpec();
       } else {
-        console.log('New issue is not a kickoff issue. Skipping.');
+        console.log('New issue is not a create-spec issue. Skipping.');
       }
     } else {
       await runNextTask();

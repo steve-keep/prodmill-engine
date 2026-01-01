@@ -1,7 +1,7 @@
-name: Prod-Mill Project Kickoff
-description: Start a new project with Prod-Mill.
-title: "[Project Kickoff]: "
-labels: ["prodmill-kickoff"]
+name: Create Spec
+description: Create a new specification for Prod-Mill.
+title: "[Create Spec]: "
+labels: ["create-spec"]
 body:
   - type: textarea
     id: spec
