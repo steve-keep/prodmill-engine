@@ -22,20 +22,38 @@ The engine is designed to be run in the context of a project repository that uti
 
 ## Usage
 
-To use the `prodmill-engine` in your workflow, you can add the following step to your `.github/workflows/main.yml` file:
+The `prodmill-engine` has two modes of operation: `create-spec` and `next-task`. For detailed integration instructions, please refer to the `INTEGRATION.md` file.
+
+### `create-spec`
+
+This mode is used to create a new specification from a GitHub issue.
 
 ```yaml
-- name: Run Prod-Mill Engine
-  uses: your-username/prodmill-engine@main
+- name: Run ProdMill
+  uses: steve-keep/prodmill-engine@main
   with:
+    mode: 'create-spec'
     jules_api_key: ${{ secrets.JULES_API_KEY }}
-    github_token: ${{ secrets.GITHUB_TOKEN }}
+    issue_body: ${{ github.event.issue.body }}
+```
+
+### `next-task`
+
+This mode is used to determine the next task to work on.
+
+```yaml
+- name: Run ProdMill
+  uses: steve-keep/prodmill-engine@main
+  with:
+    mode: 'next-task'
+    jules_api_key: ${{ secrets.JULES_API_KEY }}
 ```
 
 ### Inputs
 
+*   `mode` (required): The operation mode. Either `"create-spec"` or `"next-task"`.
 *   `jules_api_key` (required): The API key for the Jules AI agent.
-*   `github_token` (required): The GitHub token for authentication.
+*   `issue_body` (optional): The body of the issue that triggered the workflow. Required for `create-spec` mode.
 
 ### Outputs
 
