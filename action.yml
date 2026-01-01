@@ -1,0 +1,15 @@
+name: 'Prod-Mill Engine'
+description: 'The core logic for the prodmill-engine.'
+inputs:
+  jules_api_key:
+    description: 'The API key for Jules.'
+    required: true
+  github_token:
+    description: 'The GitHub token for authentication.'
+    required: true
+outputs:
+  issue_id:
+    description: 'The ID of the bead being processed.'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'

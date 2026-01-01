@@ -1,0 +1,15 @@
+{
+  "name": "prodmill-engine",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/engine.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@actions/core": "^2.0.0"
+  }
+}
