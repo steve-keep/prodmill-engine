@@ -1,0 +1,19 @@
+name: Create Spec
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  create-spec:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run Prod-Mill Engine
+        uses: ./
+        with:
+          mode: 'create-spec'
+          jules_api_key: ${{ secrets.JULES_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
