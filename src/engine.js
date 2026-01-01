@@ -139,18 +139,16 @@ async function runNextTask() {
 
 async function run() {
   try {
-    const context = github.context;
-    if (context.eventName === 'issues' && context.payload.action === 'opened') {
-      const issue = context.payload.issue;
-      const isCreateSpec = issue.labels.some(label => label.name === 'create-spec');
-
-      if (isCreateSpec) {
+    const mode = core.getInput('mode', { required: true });
+    switch (mode) {
+      case 'create-spec':
         await runCreateSpec();
-      } else {
-        console.log('New issue is not a create-spec issue. Skipping.');
-      }
-    } else {
-      await runNextTask();
+        break;
+      case 'next-task':
+        await runNextTask();
+        break;
+      default:
+        core.setFailed(`Invalid mode: ${mode}`);
     }
   } catch (error) {
     core.setFailed(error.message);

@@ -1,11 +1,12 @@
-name: Create Spec
+name: Next Task
 
 on:
-  issues:
-    types: [opened]
+  schedule:
+    - cron: '0 0 * * *' # Runs every day at midnight
+  workflow_dispatch: # Allows manual triggering
 
 jobs:
-  create-spec:
+  next-task:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -14,6 +15,6 @@ jobs:
       - name: Run Prod-Mill Engine
         uses: ./
         with:
-          mode: 'create-spec'
+          mode: 'next-task'
           jules_api_key: ${{ secrets.JULES_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
