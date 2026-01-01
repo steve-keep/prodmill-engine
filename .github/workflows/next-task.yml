@@ -17,4 +17,3 @@ jobs:
         with:
           mode: 'next-task'
           jules_api_key: ${{ secrets.JULES_API_KEY }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}

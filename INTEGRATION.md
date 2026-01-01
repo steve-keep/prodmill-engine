@@ -39,6 +39,7 @@ jobs:
         with:
           mode: 'create-spec'
           jules_api_key: ${{ secrets.JULES_API_KEY }}
+          issue_body: ${{ github.event.issue.body }}
 ```
 
 ### Required Secrets
