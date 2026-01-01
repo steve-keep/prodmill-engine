@@ -1,10 +1,10 @@
-# Prod-Mill Engine Integration
+# ProdMill Integration
 
-This document outlines the steps to integrate the Prod-Mill Engine into your repository.
+This document outlines the steps to integrate ProdMill into your repository.
 
 ## `create-spec` Workflow
 
-The `create-spec` workflow is triggered when a new issue is created in your repository. It uses the Prod-Mill Engine to create a new specification based on the issue's content.
+The `create-spec` workflow is triggered when a new issue is created in your repository. It uses ProdMill to create a new specification based on the issue's content.
 
 ### Triggering the Workflow
 
@@ -34,12 +34,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Run Prod-Mill Engine
-        uses: <your-github-username>/<your-repo-name>@main
+      - name: Run ProdMill
+        uses: steve-keep/prodmill-engine@main
         with:
           mode: 'create-spec'
           jules_api_key: ${{ secrets.JULES_API_KEY }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Required Secrets
@@ -47,13 +46,12 @@ jobs:
 The `create-spec` workflow requires the following secrets to be configured in your repository:
 
 - `JULES_API_KEY`: Your API key for the Jules service.
-- `GITHUB_TOKEN`: The default GitHub token is sufficient for this workflow.
 
 These secrets can be added in the "Secrets and variables" > "Actions" section of your repository's settings.
 
 ## `next-task` Workflow
 
-The `next-task` workflow is triggered when a pull request is merged. It uses the Prod-Mill Engine to determine the next task to be worked on.
+The `next-task` workflow is triggered when a pull request is merged. It uses ProdMill to determine the next task to be worked on.
 
 ### Triggering the Workflow
 
@@ -78,12 +76,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Run Prod-Mill Engine
-        uses: <your-github-username>/<your-repo-name>@main
+      - name: Run ProdMill
+        uses: steve-keep/prodmill-engine@main
         with:
           mode: 'next-task'
           jules_api_key: ${{ secrets.JULES_API_KEY }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Required Secrets
@@ -91,6 +88,5 @@ jobs:
 The `next-task` workflow requires the same secrets as the `create-spec` workflow:
 
 - `JULES_API_KEY`: Your API key for the Jules service.
-- `GITHUB_TOKEN`: The default GitHub token is sufficient for this workflow.
 
 These secrets can be added in the "Secrets and variables" > "Actions" section of your repository's settings.
