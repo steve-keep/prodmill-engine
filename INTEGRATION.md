@@ -47,17 +47,17 @@ jobs:
 The `create-spec` workflow requires the following secrets to be configured in your repository:
 
 - `JULES_API_KEY`: Your API key for the Jules service.
-- `GITHUB_TOKEN`: A GitHub token with the necessary permissions to read and write to your repository.
+- `GITHUB_TOKEN`: The default GitHub token is sufficient for this workflow.
 
 These secrets can be added in the "Secrets and variables" > "Actions" section of your repository's settings.
 
 ## `next-task` Workflow
 
-The `next-task` workflow is triggered when a pull request is opened or synchronized. It uses the Prod-Mill Engine to determine the next task to be worked on.
+The `next-task` workflow is triggered when a pull request is merged. It uses the Prod-Mill Engine to determine the next task to be worked on.
 
 ### Triggering the Workflow
 
-To trigger the `next-task` workflow, you need to create a pull request. The workflow will run automatically when the pull request is opened or when new commits are pushed to it.
+To trigger the `next-task` workflow, you need to merge a pull request. The workflow will run automatically when the pull request is merged.
 
 ### Workflow Configuration
 
@@ -68,10 +68,11 @@ name: Next Task
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [closed]
 
 jobs:
   next-task:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -90,6 +91,6 @@ jobs:
 The `next-task` workflow requires the same secrets as the `create-spec` workflow:
 
 - `JULES_API_KEY`: Your API key for the Jules service.
-- `GITHUB_TOKEN`: A GitHub token with the necessary permissions to read and write to your repository.
+- `GITHUB_TOKEN`: The default GitHub token is sufficient for this workflow.
 
 These secrets can be added in the "Secrets and variables" > "Actions" section of your repository's settings.
