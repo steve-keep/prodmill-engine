@@ -9,4 +9,4 @@ RUN npm install
 
 COPY . .
 
-ENTRYPOINT ["node", "src/engine.js"]
+ENTRYPOINT ["node", "/app/src/engine.js"]
