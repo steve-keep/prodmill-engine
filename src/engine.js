@@ -8,8 +8,8 @@ async function callJulesApi(payload) {
   const apiKey = core.getInput('jules_api_key', { required: true });
   const data = JSON.stringify(payload);
 
-  const apiHostname = process.env.JULES_API_HOSTNAME || 'jules-api.prodmill.com';
-  const apiPath = process.env.JULES_API_PATH || '/v1/runs';
+  const apiHostname = 'jules.googleapis.com';
+  const apiPath = `/v1alpha/sessions`;
 
   const options = {
     hostname: apiHostname,
@@ -19,7 +19,7 @@ async function callJulesApi(payload) {
     headers: {
       'Content-Type': 'application/json',
       'Content-Length': data.length,
-      'Authorization': `Bearer ${apiKey}`
+      'X-Goog-Api-Key': apiKey
     }
   };
 
@@ -95,8 +95,22 @@ This plan should be suitable for a .spec-kit/plan.md file.
 Submit this plan as a Pull Request for human review. Do not create beads or other files yet.`;
   }
 
+  const repoId = process.env.GITHUB_REPOSITORY;
+  if (!repoId) {
+    core.setFailed('GITHUB_REPOSITORY environment variable not set.');
+    return;
+  }
+  const sourceName = `sources/github/${repoId}`;
+
   const payload = {
-    system_instruction: system_instruction
+    prompt: system_instruction,
+    sourceContext: {
+      source: sourceName,
+      githubRepoContext: {
+        startingBranch: "main"
+      }
+    },
+    title: "Create Specification"
   };
 
   try {
@@ -161,11 +175,36 @@ async function runNextTask() {
   const constitution = await fs.readFile(constitutionPath, 'utf8');
 
   // 5. Agent Payload Construction
+  const repoId = process.env.GITHUB_REPOSITORY;
+  if (!repoId) {
+    core.setFailed('GITHUB_REPOSITORY environment variable not set.');
+    return;
+  }
+  const sourceName = `sources/github/${repoId}`;
+
+  const prompt = `You are working on a ProdMill project. Refer to the provided Spec-Kit for instructions. When finished, you must commit your changes and ensure the Bead is updated.
+
+## Task Details
+\`\`\`json
+${JSON.stringify(task, null, 2)}
+\`\`\`
+
+## Plan Context
+${planContext}
+
+## Constitution
+${constitution}
+`;
+
   const payload = {
-    task: task,
-    plan_context: planContext,
-    constitution: constitution,
-    system_instruction: "You are working on a ProdMill project. Refer to the provided Spec-Kit for instructions. When finished, you must commit your changes and ensure the Bead is updated."
+    prompt: prompt,
+    sourceContext: {
+      source: sourceName,
+      githubRepoContext: {
+        startingBranch: "main"
+      }
+    },
+    title: `Next Task: ${task.title || issueId}`
   };
 
   try {
@@ -197,8 +236,22 @@ async function runUpdateConstitution() {
 
 "/speckit.constitution ${constitutionUpdate}"`;
 
+  const repoId = process.env.GITHUB_REPOSITORY;
+  if (!repoId) {
+    core.setFailed('GITHUB_REPOSITORY environment variable not set.');
+    return;
+  }
+  const sourceName = `sources/github/${repoId}`;
+
   const payload = {
-    system_instruction: system_instruction
+    prompt: system_instruction,
+    sourceContext: {
+      source: sourceName,
+      githubRepoContext: {
+        startingBranch: "main"
+      }
+    },
+    title: "Update Constitution"
   };
 
   try {
