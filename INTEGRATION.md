@@ -50,6 +50,53 @@ The `create-spec` workflow requires the following secrets to be configured in yo
 
 These secrets can be added in the "Secrets and variables" > "Actions" section of your repository's settings.
 
+## `update-constitution` Workflow
+
+The `update-constitution` workflow is triggered when a new issue is created with the "Update Constitution" issue form. It uses ProdMill to send a command to Jules to update the constitution.
+
+### Triggering the Workflow
+
+To trigger the `update-constitution` workflow, you need to create a new issue using the "Update Constitution" issue form. This form will automatically apply the `update-constitution` label to the issue, which is required for the workflow to run.
+
+The issue form has the following fields:
+
+- **Proposed Constitution Update:** A description of the proposed changes or additions to the constitution.
+
+### Workflow Configuration
+
+To use the `update-constitution` workflow, you need to create a file named `update-constitution.yml` in the `.github/workflows/` directory of your repository with the following content:
+
+```yaml
+name: Update Constitution
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  update-constitution:
+    if: contains(github.event.issue.labels.*.name, 'update-constitution')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run ProdMill
+        uses: steve-keep/prodmill-engine@main
+        with:
+          mode: 'update-constitution'
+          jules_api_key: ${{ secrets.JULES_API_KEY }}
+          issue_body: ${{ github.event.issue.body }}
+```
+
+### Required Secrets
+
+The `update-constitution` workflow requires the same secrets as the other workflows:
+
+- `JULES_API_KEY`: Your API key for the Jules service.
+
+These secrets can be added in the "Secrets and variables" > "Actions" section of your repository's settings.
+
 ## `next-task` Workflow
 
 The `next-task` workflow is triggered when a pull request is merged. It uses ProdMill to determine the next task to be worked on.

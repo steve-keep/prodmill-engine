@@ -2,7 +2,7 @@ name: 'Prod-Mill Engine'
 description: 'The core logic for the prodmill-engine.'
 inputs:
   mode:
-    description: 'The operation mode. Either "create-spec" or "next-task".'
+    description: 'The operation mode. Either "create-spec", "next-task", or "update-constitution".'
     required: true
   jules_api_key:
     description: 'The API key for Jules.'
