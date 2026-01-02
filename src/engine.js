@@ -79,8 +79,7 @@ ${plan}
 Your task:
 
 Expand the Specification into a full .spec-kit/specification.md.
-Convert the Plan into a detailed .spec-kit/plan.md with specific implementation phases.
-Create a series of beads create commands. Each Bead must map back to a specific phase in your plan. Ensure dependencies are correctly set (e.g., 'API Setup' must block 'UI Integration').`;
+Convert the Plan into a detailed .spec-kit/plan.md with specific implementation phases.`;
   } else {
     system_instruction = `I have a new project request.
 Specification provided by human:
@@ -92,7 +91,7 @@ Your task:
 
 Based on the specification, draft a proposed high-level technical plan.
 This plan should be suitable for a .spec-kit/plan.md file.
-Submit this plan as a Pull Request for human review. Do not create beads or other files yet.`;
+Submit this plan as a Pull Request for human review.`;
   }
 
   const repoId = process.env.GITHUB_REPOSITORY;
@@ -122,101 +121,7 @@ Submit this plan as a Pull Request for human review. Do not create beads or othe
 }
 
 async function runNextTask() {
-  // 1. Workspace Discovery
-  const workspace = process.env.PRODMILL_WORKSPACE || process.cwd();
-  console.log(`Using workspace: ${workspace}`);
-
-  const specKitPath = path.join(workspace, '.spec-kit');
-  const beadsPath = path.join(workspace, '.beads');
-
-  try {
-    await fs.access(specKitPath);
-    await fs.access(beadsPath);
-  } catch (error) {
-    core.setFailed('Missing .spec-kit or .beads directory.');
-    return;
-  }
-
-  // 2. Beads Integration
-  const bdReadyOutput = await new Promise((resolve, reject) => {
-    exec('bd ready --json', { cwd: workspace }, (error, stdout, stderr) => {
-      if (error) {
-        reject(new Error(`Failed to run "bd ready": ${stderr}`));
-      }
-      resolve(stdout);
-    });
-  });
-
-  const tasks = bdReadyOutput.trim().split('\n').map(line => JSON.parse(line));
-  if (tasks.length === 0) {
-    console.log('No ready tasks found in beads.');
-    return;
-  }
-
-  const task = tasks[0]; // Highest priority
-  const issueId = task.id;
-
-  // 3. plan.md Parsing
-  const planPath = path.join(specKitPath, 'plan.md');
-  const planContent = await fs.readFile(planPath, 'utf8');
-  const beadComment = `<!-- bead:${issueId} -->`;
-  const sectionRegex = new RegExp(`(##.*${beadComment})\\n([\\s\S]*?)(?=\\n##|$)`);
-  const match = planContent.match(sectionRegex);
-
-  if (!match) {
-    core.setFailed(`Could not find a section for bead ${issueId} in plan.md.`);
-    return;
-  }
-
-  const planContext = match[2].trim();
-
-  // 4. Constitution Reading
-  const constitutionPath = path.join(specKitPath, 'constitution.md');
-  const constitution = await fs.readFile(constitutionPath, 'utf8');
-
-  // 5. Agent Payload Construction
-  const repoId = process.env.GITHUB_REPOSITORY;
-  if (!repoId) {
-    core.setFailed('GITHUB_REPOSITORY environment variable not set.');
-    return;
-  }
-  const sourceName = `sources/github/${repoId}`;
-
-  const prompt = `You are working on a ProdMill project. Refer to the provided Spec-Kit for instructions. When finished, you must commit your changes and ensure the Bead is updated.
-
-## Task Details
-\`\`\`json
-${JSON.stringify(task, null, 2)}
-\`\`\`
-
-## Plan Context
-${planContext}
-
-## Constitution
-${constitution}
-`;
-
-  const payload = {
-    prompt: prompt,
-    sourceContext: {
-      source: sourceName,
-      githubRepoContext: {
-        startingBranch: "main"
-      }
-    },
-    title: `Next Task: ${task.title || issueId}`
-  };
-
-  try {
-    await callJulesApi(payload);
-    console.log(`Successfully triggered Jules for task ${issueId}.`);
-  } catch (error) {
-    core.setFailed(error.message);
-  }
-
-  // 6. Output
-  core.setOutput('issue_id', issueId);
-  console.log(`Processing issue: ${issueId}`);
+  console.log('Next-task functionality is currently disabled.');
 }
 
 async function runUpdateConstitution() {
@@ -232,31 +137,29 @@ async function runUpdateConstitution() {
     return;
   }
 
-  const system_instruction = `Run the setup.sh script and then run the command:
-
-"/speckit.constitution ${constitutionUpdate}"`;
-
-  const repoId = process.env.GITHUB_REPOSITORY;
-  if (!repoId) {
-    core.setFailed('GITHUB_REPOSITORY environment variable not set.');
-    return;
-  }
-  const sourceName = `sources/github/${repoId}`;
-
-  const payload = {
-    prompt: system_instruction,
-    sourceContext: {
-      source: sourceName,
-      githubRepoContext: {
-        startingBranch: "main"
-      }
-    },
-    title: "Update Constitution"
-  };
+  const command = 'speckit.constitution';
+  const args = [constitutionUpdate];
+  console.log(`Executing command: ${command} ${args.join(' ')}`);
 
   try {
-    await callJulesApi(payload);
-    console.log('Successfully triggered Jules for constitution update.');
+    const output = await new Promise((resolve, reject) => {
+      // Use execFile for security, to avoid shell injection vulnerabilities.
+      const { execFile } = require('child_process');
+      execFile(command, args, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`execFile error: ${error}`);
+          reject(new Error(`Failed to run speckit command: ${stderr}`));
+          return;
+        }
+        console.log(`stdout: ${stdout}`);
+        if (stderr) {
+          console.error(`stderr: ${stderr}`);
+        }
+        resolve(stdout);
+      });
+    });
+    console.log('Successfully executed speckit command.');
+    console.log('Output:', output);
   } catch (error) {
     core.setFailed(error.message);
   }
