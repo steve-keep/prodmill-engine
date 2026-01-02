@@ -1,0 +1,13 @@
+name: Update Constitution
+description: "Propose an update to the project's constitution.md."
+title: "[Constitution]: "
+labels: ["update-constitution"]
+body:
+  - type: textarea
+    id: constitution-update
+    attributes:
+      label: Proposed Constitution Update
+      description: "Describe the proposed changes or additions to the constitution."
+      placeholder: "e.g., Add a new principle about..."
+    validations:
+      required: true

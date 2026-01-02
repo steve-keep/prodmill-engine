@@ -2,6 +2,52 @@ const core = require('@actions/core');
 const fs = require('fs').promises;
 const path = require('path');
 const { exec } = require('child_process');
+const https = require('https');
+
+async function callJulesApi(payload) {
+  const apiKey = core.getInput('jules_api_key', { required: true });
+  const data = JSON.stringify(payload);
+
+  const apiHostname = process.env.JULES_API_HOSTNAME || 'jules-api.prodmill.com';
+  const apiPath = process.env.JULES_API_PATH || '/v1/runs';
+
+  const options = {
+    hostname: apiHostname,
+    port: 443,
+    path: apiPath,
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': data.length,
+      'Authorization': `Bearer ${apiKey}`
+    }
+  };
+
+  return new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let responseBody = '';
+      res.on('data', (chunk) => {
+        responseBody += chunk;
+      });
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          console.log('Jules API call successful.');
+          resolve(responseBody ? JSON.parse(responseBody) : {});
+        } else {
+          reject(new Error(`Jules API call failed with status code ${res.statusCode}: ${responseBody}`));
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      reject(new Error(`Failed to make Jules API call: ${error.message}`));
+    });
+
+    req.write(data);
+    req.end();
+  });
+}
+
 
 async function runCreateSpec() {
   console.log('Create spec triggered!');
@@ -53,11 +99,12 @@ Submit this plan as a Pull Request for human review. Do not create beads or othe
     system_instruction: system_instruction
   };
 
-  // For now, we'll just print the payload.
-  // In the future, this would be sent to the Jules API.
-  console.log('--- Jules API Payload ---');
-  console.log(JSON.stringify(payload, null, 2));
-  console.log('-------------------------');
+  try {
+    await callJulesApi(payload);
+    console.log('Successfully triggered Jules for spec creation.');
+  } catch (error) {
+    core.setFailed(error.message);
+  }
 }
 
 async function runNextTask() {
@@ -121,13 +168,45 @@ async function runNextTask() {
     system_instruction: "You are working on a ProdMill project. Refer to the provided Spec-Kit for instructions. When finished, you must commit your changes and ensure the Bead is updated."
   };
 
-  // For now, we'll just print the payload.
-  // In the future, this would be sent to the Jules API.
-  console.log(JSON.stringify(payload, null, 2));
+  try {
+    await callJulesApi(payload);
+    console.log(`Successfully triggered Jules for task ${issueId}.`);
+  } catch (error) {
+    core.setFailed(error.message);
+  }
 
   // 6. Output
   core.setOutput('issue_id', issueId);
   console.log(`Processing issue: ${issueId}`);
+}
+
+async function runUpdateConstitution() {
+  console.log('Update constitution triggered!');
+  const issueBody = core.getInput('issue_body', { required: true });
+
+  const contentRegex = /### Proposed Constitution Update\s*([\s\S]*)/;
+  const match = issueBody.match(contentRegex);
+  const constitutionUpdate = match ? match[1].trim() : '';
+
+  if (!constitutionUpdate) {
+    core.setFailed('Could not find a Proposed Constitution Update in the issue body.');
+    return;
+  }
+
+  const system_instruction = `Run the setup.sh script and then run the command:
+
+"/speckit.constitution ${constitutionUpdate}"`;
+
+  const payload = {
+    system_instruction: system_instruction
+  };
+
+  try {
+    await callJulesApi(payload);
+    console.log('Successfully triggered Jules for constitution update.');
+  } catch (error) {
+    core.setFailed(error.message);
+  }
 }
 
 async function run() {
@@ -139,6 +218,9 @@ async function run() {
         break;
       case 'next-task':
         await runNextTask();
+        break;
+      case 'update-constitution':
+        await runUpdateConstitution();
         break;
       default:
         core.setFailed(`Invalid mode: ${mode}`);
