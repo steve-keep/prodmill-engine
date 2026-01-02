@@ -1,18 +1,11 @@
 const core = require('@actions/core');
-const github = require('@actions/github');
 const fs = require('fs').promises;
 const path = require('path');
 const { exec } = require('child_process');
 
 async function runCreateSpec() {
   console.log('Create spec triggered!');
-  const issue = github.context.payload.issue;
-  if (!issue) {
-    core.setFailed('Could not find issue in context.');
-    return;
-  }
-
-  const issueBody = issue.body || '';
+  const issueBody = core.getInput('issue_body', { required: true });
 
   const specRegex = /### Product Specification\s*([\s\S]*?)(?:### Technical Plan|$)/;
   const planRegex = /### Technical Plan\s*([\s\S]*)/;

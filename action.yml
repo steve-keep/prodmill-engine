@@ -7,9 +7,9 @@ inputs:
   jules_api_key:
     description: 'The API key for Jules.'
     required: true
-  github_token:
-    description: 'The GitHub token for authentication.'
-    required: true
+  issue_body:
+    description: 'The body of the issue that triggered the workflow.'
+    required: false
 outputs:
   issue_id:
     description: 'The ID of the bead being processed.'
