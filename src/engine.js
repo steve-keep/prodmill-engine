@@ -124,47 +124,6 @@ async function runNextTask() {
   console.log('Next-task functionality is currently disabled.');
 }
 
-async function runUpdateConstitution() {
-  console.log('Update constitution triggered!');
-  const issueBody = core.getInput('issue_body', { required: true });
-
-  const contentRegex = /### Proposed Constitution Update\s*([\s\S]*)/;
-  const match = issueBody.match(contentRegex);
-  const constitutionUpdate = match ? match[1].trim() : '';
-
-  if (!constitutionUpdate) {
-    core.setFailed('Could not find a Proposed Constitution Update in the issue body.');
-    return;
-  }
-
-  const command = 'speckit.constitution';
-  const args = [constitutionUpdate];
-  console.log(`Executing command: ${command} ${args.join(' ')}`);
-
-  try {
-    const output = await new Promise((resolve, reject) => {
-      // Use execFile for security, to avoid shell injection vulnerabilities.
-      const { execFile } = require('child_process');
-      execFile(command, args, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`execFile error: ${error}`);
-          reject(new Error(`Failed to run speckit command: ${stderr}`));
-          return;
-        }
-        console.log(`stdout: ${stdout}`);
-        if (stderr) {
-          console.error(`stderr: ${stderr}`);
-        }
-        resolve(stdout);
-      });
-    });
-    console.log('Successfully executed speckit command.');
-    console.log('Output:', output);
-  } catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
 async function run() {
   try {
     const mode = core.getInput('mode', { required: true });
@@ -174,9 +133,6 @@ async function run() {
         break;
       case 'next-task':
         await runNextTask();
-        break;
-      case 'update-constitution':
-        await runUpdateConstitution();
         break;
       default:
         core.setFailed(`Invalid mode: ${mode}`);
