@@ -8,6 +8,9 @@ jobs:
   update-constitution:
     if: contains(github.event.issue.labels.*.name, 'update-constitution')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -18,3 +21,4 @@ jobs:
           mode: 'update-constitution'
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           issue_body: ${{ github.event.issue.body }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}

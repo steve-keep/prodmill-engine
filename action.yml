@@ -13,6 +13,9 @@ inputs:
   issue_body:
     description: 'The body of the GitHub issue.'
     required: false
+  github_token:
+    description: 'GitHub token for creating pull requests.'
+    required: false
 outputs:
   issue_id:
     description: 'The ID of the issue being processed.'

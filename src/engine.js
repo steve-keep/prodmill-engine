@@ -1,8 +1,11 @@
 const core = require('@actions/core');
 const fs = require('fs').promises;
 const path = require('path');
-const { exec, spawn } = require('child_process');
+const { exec: callbackExec, spawn } = require('child_process');
+const { promisify } = require('util');
+const exec = promisify(callbackExec);
 const https = require('https');
+const github = require('@actions/github');
 
 async function callJulesApi(payload) {
   const apiKey = core.getInput('jules_api_key', { required: true });
@@ -124,6 +127,8 @@ async function runUpdateConstitution() {
   console.log('Update constitution triggered!');
   const issueBody = core.getInput('issue_body', { required: true });
   const geminiApiKey = core.getInput('gemini_api_key', { required: true });
+  const token = core.getInput('github_token', { required: true });
+  const octokit = github.getOctokit(token);
 
   const heading = '### Proposed Constitution Update';
   const headingIndex = issueBody.indexOf(heading);
@@ -160,13 +165,34 @@ async function runUpdateConstitution() {
     process.stderr.write(data);
   });
 
-  return new Promise((resolve) => {
+  await new Promise((resolve) => {
     child.on('close', (code) => {
       if (code !== 0) {
         core.setFailed(`Process exited with code ${code}`);
       }
       resolve();
     });
+  });
+
+  const branchName = `update-constitution-${Date.now()}`;
+  const commitMessage = 'Update constitution.md';
+  const prTitle = 'Update Constitution';
+  const prBody = 'This PR updates the constitution based on the latest proposal.';
+
+  await exec('git config --global user.name "github-actions[bot]"');
+  await exec('git config --global user.email "github-actions[bot]@users.noreply.github.com"');
+  await exec(`git checkout -b ${branchName}`);
+  await exec('git add .specify/memory/constitution.md');
+  await exec(`git commit -m "${commitMessage}"`);
+  await exec(`git push origin ${branchName}`);
+
+  await octokit.rest.pulls.create({
+    owner: github.context.repo.owner,
+    repo: github.context.repo.repo,
+    title: prTitle,
+    body: prBody,
+    head: branchName,
+    base: 'main',
   });
 }
 

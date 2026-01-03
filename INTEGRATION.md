@@ -87,13 +87,20 @@ jobs:
           mode: 'update-constitution'
           gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
           issue_body: ${{ github.event.issue.body }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Required Secrets
 
-The `update-constitution` workflow requires the following secret to be configured in your repository:
+The `update-constitution` workflow requires the following secrets to be configured in your repository:
 
 - `GEMINI_API_KEY`: Your API key for the Gemini service.
+- `GITHUB_TOKEN`: This is a built-in secret provided by GitHub. You don't need to create it. However, you do need to ensure the workflow has the correct permissions. You can do this by adding the following to your `update-constitution.yml` file:
+  ```yaml
+  permissions:
+    contents: write
+    pull-requests: write
+  ```
 
 These secrets can be added in the "Secrets and variables" > "Actions" section of your repository's settings.
 
