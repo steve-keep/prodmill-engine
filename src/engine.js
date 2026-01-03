@@ -1,7 +1,7 @@
 const core = require('@actions/core');
 const fs = require('fs').promises;
 const path = require('path');
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 const https = require('https');
 
 async function callJulesApi(payload) {
@@ -120,6 +120,56 @@ Submit this plan as a Pull Request for human review.`;
   }
 }
 
+async function runUpdateConstitution() {
+  console.log('Update constitution triggered!');
+  const issueBody = core.getInput('issue_body', { required: true });
+  const geminiApiKey = core.getInput('gemini_api_key', { required: true });
+
+  const heading = '### Proposed Constitution Update';
+  const headingIndex = issueBody.indexOf(heading);
+
+  if (headingIndex === -1) {
+    core.setFailed(`Could not find the required heading in the issue body: "${heading}"`);
+    return;
+  }
+
+  const content = issueBody.substring(headingIndex + heading.length).trim();
+
+  if (!content) {
+    core.setFailed('No content found under "### Proposed Constitution Update" heading.');
+    return;
+  }
+
+  const command = 'gemini';
+  const args = ['/speckit.constitution', content];
+
+  console.log(`Executing command: ${command} with args: ${args}`);
+
+  const child = spawn(command, args, {
+    env: {
+      ...process.env,
+      'GEMINI_API_KEY': geminiApiKey,
+    },
+  });
+
+  child.stdout.on('data', (data) => {
+    process.stdout.write(data);
+  });
+
+  child.stderr.on('data', (data) => {
+    process.stderr.write(data);
+  });
+
+  return new Promise((resolve) => {
+    child.on('close', (code) => {
+      if (code !== 0) {
+        core.setFailed(`Process exited with code ${code}`);
+      }
+      resolve();
+    });
+  });
+}
+
 async function runNextTask() {
   console.log('Next-task functionality is currently disabled.');
 }
@@ -130,6 +180,9 @@ async function run() {
     switch (mode) {
       case 'create-spec':
         await runCreateSpec();
+        break;
+      case 'update-constitution':
+        await runUpdateConstitution();
         break;
       case 'next-task':
         await runNextTask();

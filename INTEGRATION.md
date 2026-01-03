@@ -52,7 +52,7 @@ These secrets can be added in the "Secrets and variables" > "Actions" section of
 
 ## `update-constitution` Workflow
 
-The `update-constitution` workflow is triggered when a new issue is created with the "Update Constitution" issue form. It uses the Gemini CLI to update the constitution.
+The `update-constitution` workflow is triggered when a new issue is created with the "Update Constitution" issue form. It uses ProdMill to update the constitution.
 
 ### Triggering the Workflow
 
@@ -81,31 +81,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Parse Issue Body
-        id: parse
-        run: |
-          issue_body="${{ github.event.issue.body }}"
-          heading="### Proposed Constitution Update"
-          if ! [[ "$issue_body" == *"$heading"* ]]; then
-            echo "Issue body does not contain the required heading: '$heading'"
-            exit 1
-          fi
-          # Use a heredoc to handle multiline content and preserve special characters
-          content=$(cat <<EOF
-          ${issue_body#*### Proposed Constitution Update}
-          EOF
-          )
-          # Make the content available to subsequent steps
-          echo "content<<EOF" >> $GITHUB_OUTPUT
-          echo "$content" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Run Gemini CLI
-        uses: google-github-actions/run-gemini-cli@main
+      - name: Run ProdMill
+        uses: steve-keep/prodmill-engine@main
         with:
-          api_key: ${{ secrets.GEMINI_API_KEY }}
-          command: |
-            /speckit.constitution "${{ steps.parse.outputs.content }}"
+          mode: 'update-constitution'
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          issue_body: ${{ github.event.issue.body }}
 ```
 
 ### Required Secrets

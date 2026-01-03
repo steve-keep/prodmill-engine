@@ -2,8 +2,17 @@ name: 'Prod-Mill Engine'
 description: 'The core logic for the prodmill-engine.'
 inputs:
   mode:
-    description: 'The operation mode. Either "create-spec" or "next-task".'
+    description: 'The operation mode. Either "create-spec", "next-task", or "update-constitution".'
     required: true
+  jules_api_key:
+    description: 'API key for the Jules service, used for the "create-spec" mode.'
+    required: false
+  gemini_api_key:
+    description: 'API key for the Gemini service, used for the "update-constitution" mode.'
+    required: false
+  issue_body:
+    description: 'The body of the GitHub issue.'
+    required: false
 outputs:
   issue_id:
     description: 'The ID of the issue being processed.'
