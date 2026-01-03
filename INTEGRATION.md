@@ -4,7 +4,7 @@ This document outlines the steps to integrate ProdMill into your repository.
 
 ## `create-spec` Workflow
 
-The `create-spec` workflow is triggered when a new issue is created in your repository. It uses ProdMill to create a new specification based on the issue's content.
+The `create-spec` workflow is triggered when a new issue is created in your repository. It uses ProdMill to create a new specification based on the issue's content by calling an external AI service.
 
 ### Triggering the Workflow
 
@@ -44,15 +44,15 @@ jobs:
 
 ### Required Secrets
 
-The `create-spec` workflow requires the following secrets to be configured in your repository:
+The `create-spec` workflow requires the following secret to be configured in your repository:
 
-- `JULES_API_KEY`: Your API key for the Jules service.
+- `JULES_API_KEY`: Your API key for the Jules service, which is used for specification generation.
 
 These secrets can be added in the "Secrets and variables" > "Actions" section of your repository's settings.
 
 ## `update-constitution` Workflow
 
-The `update-constitution` workflow is triggered when a new issue is created with the "Update Constitution" issue form. It uses ProdMill to send a command to Jules to update the constitution.
+The `update-constitution` workflow is triggered when a new issue is created with the "Update Constitution" issue form. It uses the Gemini CLI to update the constitution.
 
 ### Triggering the Workflow
 
@@ -81,25 +81,44 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Run ProdMill
-        uses: steve-keep/prodmill-engine@main
+      - name: Parse Issue Body
+        id: parse
+        run: |
+          issue_body="${{ github.event.issue.body }}"
+          heading="### Proposed Constitution Update"
+          if ! [[ "$issue_body" == *"$heading"* ]]; then
+            echo "Issue body does not contain the required heading: '$heading'"
+            exit 1
+          fi
+          # Use a heredoc to handle multiline content and preserve special characters
+          content=$(cat <<EOF
+          ${issue_body#*### Proposed Constitution Update}
+          EOF
+          )
+          # Make the content available to subsequent steps
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$content" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run Gemini CLI
+        uses: google-github-actions/run-gemini-cli@main
         with:
-          mode: 'update-constitution'
-          jules_api_key: ${{ secrets.JULES_API_KEY }}
-          issue_body: ${{ github.event.issue.body }}
+          api_key: ${{ secrets.GEMINI_API_KEY }}
+          command: |
+            /speckit.constitution "${{ steps.parse.outputs.content }}"
 ```
 
 ### Required Secrets
 
-The `update-constitution` workflow requires the same secrets as the other workflows:
+The `update-constitution` workflow requires the following secret to be configured in your repository:
 
-- `JULES_API_KEY`: Your API key for the Jules service.
+- `GEMINI_API_KEY`: Your API key for the Gemini service.
 
 These secrets can be added in the "Secrets and variables" > "Actions" section of your repository's settings.
 
 ## `next-task` Workflow
 
-The `next-task` workflow is triggered when a pull request is merged. It uses ProdMill to determine the next task to be worked on.
+The `next-task` workflow is triggered when a pull request is merged. It is currently a placeholder and does not perform any actions.
 
 ### Triggering the Workflow
 
@@ -128,13 +147,4 @@ jobs:
         uses: steve-keep/prodmill-engine@main
         with:
           mode: 'next-task'
-          jules_api_key: ${{ secrets.JULES_API_KEY }}
 ```
-
-### Required Secrets
-
-The `next-task` workflow requires the same secrets as the `create-spec` workflow:
-
-- `JULES_API_KEY`: Your API key for the Jules service.
-
-These secrets can be added in the "Secrets and variables" > "Actions" section of your repository's settings.
