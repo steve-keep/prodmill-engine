@@ -52,7 +52,7 @@ These secrets can be added in the "Secrets and variables" > "Actions" section of
 
 ## `update-constitution` Workflow
 
-The `update-constitution` workflow is triggered when a new issue is created with the "Update Constitution" issue form. It uses the Gemini CLI to update the constitution.
+The `update-constitution` workflow is triggered when a new issue is created with the "Update Constitution" issue form. It uses ProdMill to update the constitution.
 
 ### Triggering the Workflow
 
@@ -81,38 +81,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Parse Issue Body
-        id: parse
-        run: |
-          issue_body="${{ github.event.issue.body }}"
-          heading="### Proposed Constitution Update"
-          if ! [[ "$issue_body" == *"$heading"* ]]; then
-            echo "Issue body does not contain the required heading: '$heading'"
-            exit 1
-          fi
-          # Use a heredoc to handle multiline content and preserve special characters
-          content=$(cat <<EOF
-          ${issue_body#*### Proposed Constitution Update}
-          EOF
-          )
-          # Make the content available to subsequent steps
-          echo "content<<EOF" >> $GITHUB_OUTPUT
-          echo "$content" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Run Gemini CLI
-        uses: google-github-actions/run-gemini-cli@main
+      - name: Run ProdMill
+        uses: steve-keep/prodmill-engine@main
         with:
-          api_key: ${{ secrets.GEMINI_API_KEY }}
-          command: |
-            /speckit.constitution "${{ steps.parse.outputs.content }}"
+          mode: 'update-constitution'
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          issue_body: ${{ github.event.issue.body }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Required Secrets
 
-The `update-constitution` workflow requires the following secret to be configured in your repository:
+The `update-constitution` workflow requires the following secrets to be configured in your repository:
 
 - `GEMINI_API_KEY`: Your API key for the Gemini service.
+- `GITHUB_TOKEN`: This is a built-in secret provided by GitHub. You don't need to create it. However, you do need to ensure the workflow has the correct permissions. You can do this by adding the following to your `update-constitution.yml` file:
+  ```yaml
+  permissions:
+    contents: write
+    pull-requests: write
+  ```
 
 These secrets can be added in the "Secrets and variables" > "Actions" section of your repository's settings.
 
