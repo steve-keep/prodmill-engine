@@ -146,7 +146,7 @@ async function runUpdateConstitution() {
   }
 
   const command = 'gemini';
-  const args = ['-m', 'gemini-2.5-flash', '/speckit.constitution', content];
+  const args = ['-m', 'gemini-2.5-flash', '--yolo', '/speckit.constitution', '-p', content];
 
   console.log(`Executing command: ${command} with args: ${args}`);
 
