@@ -146,7 +146,8 @@ async function runUpdateConstitution() {
   }
 
   const command = 'gemini';
-  const args = ['/speckit.constitution', content];
+  const prompt = `/speckit.constitution ${content}`;
+  const args = ['-m', 'gemini-2.5-flash', '--yolo', '-p', prompt];
 
   console.log(`Executing command: ${command} with args: ${args}`);
 
@@ -179,6 +180,7 @@ async function runUpdateConstitution() {
   const prTitle = 'Update Constitution';
   const prBody = 'This PR updates the constitution based on the latest proposal.';
 
+  await exec('git config --global --add safe.directory /github/workspace');
   await exec('git config --global user.name "github-actions[bot]"');
   await exec('git config --global user.email "github-actions[bot]@users.noreply.github.com"');
   await exec(`git checkout -b ${branchName}`);
