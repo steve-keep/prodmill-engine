@@ -77,7 +77,7 @@ async function runCreateSpec() {
 
 "${specification}"
 
-DO NOT IMPLEMENT THE FEATURE. ONLY FOLLOW THE INSTRUCTIONS IN THE FILE.
+DO NOT IMPLEMENT THE FEATURE. ONLY FOLLOW THE INSTRUCTIONS IN THE FILE ${specifyCommandFile}.
 
 This work is being done to address issue #${issueNumber}. The final pull request should reference this issue to ensure it is automatically closed.`;
 
