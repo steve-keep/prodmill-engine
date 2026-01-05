@@ -56,46 +56,29 @@ async function runCreateSpec() {
   console.log('Create spec triggered!');
   const issueBody = core.getInput('issue_body', { required: true });
 
-  const specRegex = /### Product Specification\s*([\s\S]*?)(?:### Technical Plan|$)/;
-  const planRegex = /### Technical Plan\s*([\s\S]*)/;
-
+  const specRegex = /### Product Specification\s*([\s\S]*)/;
   const specMatch = issueBody.match(specRegex);
-  const planMatch = issueBody.match(planRegex);
 
   const specification = specMatch ? specMatch[1].trim() : '';
-  const plan = planMatch ? planMatch[1].trim() : '';
 
   if (!specification) {
     core.setFailed('Could not find a Product Specification in the issue body.');
     return;
   }
 
-  let system_instruction;
-  if (plan) {
-    system_instruction = `I have a new project request.
-Specification provided by human:
-${specification}
-
-Plan provided by human:
-${plan}
-
-Your task:
-
-Expand the Specification into a full .spec-kit/specification.md.
-Convert the Plan into a detailed .spec-kit/plan.md with specific implementation phases.`;
-  } else {
-    system_instruction = `I have a new project request.
-Specification provided by human:
-${specification}
-
-The human did not provide a technical plan.
-
-Your task:
-
-Based on the specification, draft a proposed high-level technical plan.
-This plan should be suitable for a .spec-kit/plan.md file.
-Submit this plan as a Pull Request for human review.`;
+  const issueNumber = github.context.issue.number;
+  if (!issueNumber) {
+      core.setFailed('Could not determine the issue number from the GitHub context.');
+      return;
   }
+
+  const system_instruction = `read and execute the instructions in the file .gemini/commands/speckit.specify.toml using the following as the spec:
+
+"${specification}"
+
+DO NOT IMPLEMENT THE FEATURE. ONLY FOLLOW THE INSTRUCTIONS IN THE FILE.
+
+This work is being done to address issue #${issueNumber}. The final pull request should reference this issue to ensure it is automatically closed.`;
 
   const repoId = process.env.GITHUB_REPOSITORY;
   if (!repoId) {
