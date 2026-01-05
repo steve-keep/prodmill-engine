@@ -112,6 +112,7 @@ Submit this plan as a Pull Request for human review.`;
         startingBranch: "main"
       }
     },
+    "automationMode": "AUTO_CREATE_PR",
     title: "Create Specification"
   };
 
@@ -169,6 +170,7 @@ This work is being done to address issue #${issueNumber}. The final pull request
         startingBranch: "main"
       }
     },
+    "automationMode": "AUTO_CREATE_PR",
     title: "Update Constitution"
   };
 
