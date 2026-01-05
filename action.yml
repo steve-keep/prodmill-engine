@@ -5,16 +5,10 @@ inputs:
     description: 'The operation mode. Either "create-spec", "next-task", or "update-constitution".'
     required: true
   jules_api_key:
-    description: 'API key for the Jules service, used for the "create-spec" mode.'
-    required: false
-  gemini_api_key:
-    description: 'API key for the Gemini service, used for the "update-constitution" mode.'
+    description: 'API key for the Jules service, used for the "create-spec" and "update-constitution" modes.'
     required: false
   issue_body:
     description: 'The body of the GitHub issue.'
-    required: false
-  github_token:
-    description: 'GitHub token for creating pull requests.'
     required: false
 outputs:
   issue_id:
