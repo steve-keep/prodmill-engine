@@ -11,23 +11,3 @@ body:
       placeholder: "### Product Specification\n\n..."
     validations:
       required: true
-  - type: textarea
-    id: plan
-    attributes:
-      label: High-Level Technical Approach & Architecture
-      description: "Outline the high-level technical approach and architecture for the project."
-      placeholder: "### Technical Plan\n\n..."
-    validations:
-      required: false
-  - type: dropdown
-    id: tech-stack
-    attributes:
-      label: Tech Stack
-      description: "Select the primary tech stack for this project."
-      multiple: true
-      options:
-        - Next.js
-        - Python
-        - Node
-        - Go
-        - Rust
