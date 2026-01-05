@@ -126,9 +126,6 @@ Submit this plan as a Pull Request for human review.`;
 async function runUpdateConstitution() {
   console.log('Update constitution triggered!');
   const issueBody = core.getInput('issue_body', { required: true });
-  const geminiApiKey = core.getInput('gemini_api_key', { required: true });
-  const token = core.getInput('github_token', { required: true });
-  const octokit = github.getOctokit(token);
 
   const heading = '### Proposed Constitution Update';
   const headingIndex = issueBody.indexOf(heading);
@@ -138,64 +135,49 @@ async function runUpdateConstitution() {
     return;
   }
 
-  const content = issueBody.substring(headingIndex + heading.length).trim();
+  const userPrinciples = issueBody.substring(headingIndex + heading.length).trim();
 
-  if (!content) {
+  if (!userPrinciples) {
     core.setFailed('No content found under "### Proposed Constitution Update" heading.');
     return;
   }
 
-  const command = 'gemini';
-  const prompt = `/speckit.constitution ${content}`;
-  const args = ['-m', 'gemini-2.5-flash', '--yolo', '-p', prompt];
+  const issueNumber = github.context.issue.number;
+  if (!issueNumber) {
+      core.setFailed('Could not determine the issue number from the GitHub context.');
+      return;
+  }
 
-  console.log(`Executing command: ${command} with args: ${args}`);
+  const system_instruction = `read and execute the instructions in the file .gemini/commands/speckit.constitution.toml using the following core principles:
 
-  const child = spawn(command, args, {
-    env: {
-      ...process.env,
-      'GEMINI_API_KEY': geminiApiKey,
-    },
-  });
+"${userPrinciples}"
 
-  child.stdout.on('data', (data) => {
-    process.stdout.write(data);
-  });
+This work is being done to address issue #${issueNumber}. The final pull request should reference this issue to ensure it is automatically closed.`;
 
-  child.stderr.on('data', (data) => {
-    process.stderr.write(data);
-  });
+  const repoId = process.env.GITHUB_REPOSITORY;
+  if (!repoId) {
+    core.setFailed('GITHUB_REPOSITORY environment variable not set.');
+    return;
+  }
+  const sourceName = `sources/github/${repoId}`;
 
-  await new Promise((resolve) => {
-    child.on('close', (code) => {
-      if (code !== 0) {
-        core.setFailed(`Process exited with code ${code}`);
+  const payload = {
+    prompt: system_instruction,
+    sourceContext: {
+      source: sourceName,
+      githubRepoContext: {
+        startingBranch: "main"
       }
-      resolve();
-    });
-  });
+    },
+    title: "Update Constitution"
+  };
 
-  const branchName = `update-constitution-${Date.now()}`;
-  const commitMessage = 'Update constitution.md';
-  const prTitle = 'Update Constitution';
-  const prBody = 'This PR updates the constitution based on the latest proposal.';
-
-  await exec('git config --global --add safe.directory /github/workspace');
-  await exec('git config --global user.name "github-actions[bot]"');
-  await exec('git config --global user.email "github-actions[bot]@users.noreply.github.com"');
-  await exec(`git checkout -b ${branchName}`);
-  await exec('git add .specify/memory/constitution.md');
-  await exec(`git commit -m "${commitMessage}"`);
-  await exec(`git push origin ${branchName}`);
-
-  await octokit.rest.pulls.create({
-    owner: github.context.repo.owner,
-    repo: github.context.repo.repo,
-    title: prTitle,
-    body: prBody,
-    head: branchName,
-    base: 'main',
-  });
+  try {
+    await callJulesApi(payload);
+    console.log('Successfully triggered Jules for constitution update.');
+  } catch (error) {
+    core.setFailed(error.message);
+  }
 }
 
 async function runNextTask() {
