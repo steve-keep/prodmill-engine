@@ -72,7 +72,8 @@ async function runCreateSpec() {
       return;
   }
 
-  const system_instruction = `read and execute the instructions in the file .gemini/commands/speckit.specify.toml using the following as the spec:
+  const specifyCommandFile = '.gemini/commands/speckit.specify.toml';
+  const system_instruction = `read and execute the instructions in the file ${specifyCommandFile} using the following as the spec:
 
 "${specification}"
 
