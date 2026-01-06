@@ -128,4 +128,75 @@ jobs:
         uses: steve-keep/prodmill-engine@main
         with:
           mode: 'next-task'
+
+## `create-plan` Issue Template
+
+The `create-plan` issue template is designed to facilitate the creation of implementation plans for existing specifications. The `update-spec-list` workflow automatically populates a dropdown in this template with the names of the spec directories found in the `./specs` folder.
+
+### Template Configuration
+
+To use this feature, create a file named `create-plan.yml` in the `.github/ISSUE_TEMPLATE/` directory of your repository with the following content:
+
+```yaml
+name: Create Plan
+description: Create a new plan for a spec.
+title: "[PLAN] "
+labels: ["create-plan"]
+body:
+  - type: dropdown
+    id: spec
+    attributes:
+      label: Select Spec
+      description: Which spec do you want to create a plan for?
+      options:
+        - placeholder
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: Execute the implementation planning workflow using the plan template to generate design artifacts.
+      description: Provide the plan details here.
+    validations:
+      required: true
+```
+
+## `update-spec-list` Workflow
+
+The `update-spec-list` workflow is triggered on pushes to the `main` branch. It automatically updates the `create-plan.yml` issue template's dropdown menu with the latest list of directories from the `./specs` folder.
+
+### Triggering the Workflow
+
+This workflow is automatically triggered when a push is made to the `main` branch.
+
+### Workflow Configuration
+
+To use the `update-spec-list` workflow, you need to create a file named `update-spec-list.yml` in the `.github/workflows/` directory of your repository with the following content:
+
+```yaml
+name: Update Spec List
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Update spec list in issue templates
+        uses: steve-keep/prodmill-engine@main
+        with:
+          mode: update-spec-list
+```
+
+### Required Secrets
+
+This workflow uses the default `GITHUB_TOKEN` to commit changes. No additional secrets are required.
 ```
