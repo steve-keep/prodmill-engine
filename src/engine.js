@@ -11,7 +11,10 @@ const yaml = require('js-yaml');
 async function runUpdateSpecList() {
     console.log('Update spec list triggered!');
     const specDir = './specs';
-    const issueTemplatePath = '.github/ISSUE_TEMPLATE/create-plan.yml';
+    const issueTemplatePaths = [
+        '.github/ISSUE_TEMPLATE/create-plan.yml',
+        '.github/ISSUE_TEMPLATE/create-tasks.yml',
+    ];
 
     try {
         const files = await fs.readdir(specDir);
@@ -28,33 +31,59 @@ async function runUpdateSpecList() {
             return;
         }
 
-        const issueTemplate = await fs.readFile(issueTemplatePath, 'utf8');
-        const issueTemplateJson = yaml.load(issueTemplate);
+        const changedFiles = [];
 
-        const dropdown = issueTemplateJson.body.find(field => field.id === 'spec');
-        const currentOptions = dropdown.attributes.options;
+        for (const issueTemplatePath of issueTemplatePaths) {
+            try {
+                const issueTemplate = await fs.readFile(issueTemplatePath, 'utf8');
+                const issueTemplateJson = yaml.load(issueTemplate);
 
-        const sortedCurrentOptions = [...currentOptions].sort();
-        const sortedDirs = [...dirs].sort();
+                const dropdown = issueTemplateJson.body.find(field => field.id === 'spec');
+                if (!dropdown) {
+                    console.log(`No 'spec' dropdown found in ${issueTemplatePath}. Skipping.`);
+                    continue;
+                }
 
-        if (JSON.stringify(sortedCurrentOptions) === JSON.stringify(sortedDirs)) {
-            console.log('Issue template is already up to date. Skipping update.');
+                const currentOptions = dropdown.attributes.options;
+                const sortedCurrentOptions = [...currentOptions].sort();
+                const sortedDirs = [...dirs].sort();
+
+                if (JSON.stringify(sortedCurrentOptions) !== JSON.stringify(sortedDirs)) {
+                    dropdown.attributes.options = dirs;
+                    const updatedIssueTemplate = yaml.dump(issueTemplateJson);
+                    await fs.writeFile(issueTemplatePath, updatedIssueTemplate, 'utf8');
+                    console.log(`Successfully updated ${issueTemplatePath}.`);
+                    changedFiles.push(issueTemplatePath);
+                } else {
+                    console.log(`Issue template ${issueTemplatePath} is already up to date. Skipping update for this file.`);
+                }
+            } catch (error) {
+                 if (error.code === 'ENOENT') {
+                    console.log(`Issue template file not found: ${issueTemplatePath}. Skipping.`);
+                 } else {
+                    throw error;
+                 }
+            }
+        }
+
+        if (changedFiles.length === 0) {
+            console.log('All issue templates are already up to date. No commit needed.');
             return;
         }
 
-        dropdown.attributes.options = dirs;
-        const updatedIssueTemplate = yaml.dump(issueTemplateJson);
-        await fs.writeFile(issueTemplatePath, updatedIssueTemplate, 'utf8');
-
         await exec('git config --global user.name "github-actions[bot]"');
         await exec('git config --global user.email "github-actions[bot]@users.noreply.github.com"');
-        await exec(`git add ${issueTemplatePath}`);
+
+        const filesToAdd = changedFiles.join(' ');
+        await exec(`git add ${filesToAdd}`);
+
         await exec('git commit -m "docs: update spec dropdown in issue templates [skip ci]"');
         await exec('git push');
 
-        console.log('Successfully updated the issue template.');
+        console.log('Successfully updated the issue templates and pushed the changes.');
+
     } catch (error) {
-        if (error.code === 'ENOENT') {
+        if (error.code === 'ENOENT' && error.path === specDir) {
             console.log('`specs` directory not found. Skipping update.');
             return;
         }
@@ -295,6 +324,60 @@ This work is being done to address issue ${issueNumber}. The final pull request 
   }
 }
 
+async function runCreateTasks() {
+  console.log('Create tasks triggered!');
+  const issueBody = core.getInput('issue_body', { required: true });
+  const issueNumber = core.getInput('issue_number', { required: true });
+
+  const specNameRegex = /### Select Spec\s*\n\s*([\s\S]*?)\n\n/;
+  const specNameMatch = issueBody.match(specNameRegex);
+  const specName = specNameMatch ? specNameMatch[1].trim() : '';
+
+  if (!specName) {
+    core.setFailed('Could not find a Spec Name in the issue body.');
+    return;
+  }
+
+  if (!issueNumber) {
+      core.setFailed('Could not get issue number.');
+      return;
+  }
+
+  const system_instruction = `You MUST follow these steps:
+
+1. Set environment variable export SPECIFY_FEATURE="${specName}"
+2. Read and execute ONLY FOLLOW THE INSTRUCTIONS IN THE FILE .gemini/commands/speckit.tasks.toml
+3. Create PR with only the steps from the above completed. Do not move on to the implementation phase this will be done is a seperate PR.
+
+This work is being done to address issue ${issueNumber}. The final pull request should reference this issue to ensure it is automatically closed.`;
+
+  const repoId = process.env.GITHUB_REPOSITORY;
+  if (!repoId) {
+    core.setFailed('GITHUB_REPOSITORY environment variable not set.');
+    return;
+  }
+  const sourceName = `sources/github/${repoId}`;
+
+  const payload = {
+    prompt: system_instruction,
+    sourceContext: {
+      source: sourceName,
+      githubRepoContext: {
+        startingBranch: "main"
+      }
+    },
+    "automationMode": "AUTO_CREATE_PR",
+    title: "Create Tasks for " + specName,
+  };
+
+  try {
+    await callJulesApi(payload);
+    console.log('Successfully triggered Jules for task creation.');
+  } catch (error) {
+    core.setFailed(error.message);
+  }
+}
+
 async function run() {
   try {
     const mode = core.getInput('mode', { required: true });
@@ -304,6 +387,9 @@ async function run() {
         break;
       case 'create-plan':
         await runCreatePlan();
+        break;
+      case 'create-tasks':
+        await runCreateTasks();
         break;
       case 'update-constitution':
         await runUpdateConstitution();
