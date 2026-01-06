@@ -121,9 +121,77 @@ The `create-plan` workflow requires the following secret to be configured in you
 
 - `JULES_API_KEY`: Your API key for the Jules service, which is used for plan generation.
 
+## `create-tasks` Workflow
+
+The `create-tasks` workflow is triggered when an issue is labeled with `create-tasks`. It uses ProdMill to break down a specification into discrete development tasks.
+
+### Triggering the Workflow
+
+To trigger this workflow, create an issue using the "Create Tasks" issue form. This form will apply the `create-tasks` label, which triggers the workflow. The form requires you to select an existing specification.
+
+### Workflow Configuration
+
+To use the `create-tasks` workflow, you need to create a file named `create-tasks.yml` in the `.github/workflows/` directory of your repository with the following content:
+
+```yaml
+name: Create Tasks
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  create-tasks:
+    if: github.event.label.name == 'create-tasks'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Prod-Mill Engine
+        uses: steve-keep/prodmill-engine@main
+        with:
+          mode: 'create-tasks'
+          jules_api_key: ${{ secrets.JULES_API_KEY }}
+          issue_body: ${{ github.event.issue.body }}
+          issue_number: ${{ github.event.issue.number }}
+```
+
+### Issue Template
+
+The workflow relies on a specific issue template to gather the necessary information. The `update-spec-list` workflow (see below) can automatically populate a dropdown in this template with the names of the spec directories found in the `./specs` folder.
+
+Create a file named `create-tasks.yml` in the `.github/ISSUE_TEMPLATE/` directory with the following content:
+
+```yaml
+name: Create Tasks
+description: Create new tasks for a spec.
+title: "[TASKS] "
+labels: ["create-tasks"]
+body:
+  - type: dropdown
+    id: spec
+    attributes:
+      label: Select Spec
+      description: Which spec do you want to create tasks for?
+      options:
+        - placeholder
+    validations:
+      required: true
+```
+
+### Required Secrets
+
+The `create-tasks` workflow requires the following secret to be configured in your repository:
+
+- `JULES_API_KEY`: Your API key for the Jules service, which is used for task generation.
+
 ## `update-spec-list` Workflow
 
-The `update-spec-list` workflow is triggered on pushes to the `main` branch. It automatically updates the `create-plan.yml` issue template's dropdown menu with the latest list of directories from the `./specs` folder. This ensures the "Create Plan" issue form always shows the most current list of specifications.
+The `update-spec-list` workflow is triggered on pushes to the `main` branch. It automatically updates the `create-plan.yml` and `create-tasks.yml` issue templates' dropdown menus with the latest list of directories from the `./specs` folder. This ensures the "Create Plan" and "Create Tasks" issue forms always show the most current list of specifications.
 
 ### Triggering the Workflow
 
