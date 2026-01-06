@@ -18,7 +18,7 @@ The engine is designed to be run in the context of a project repository that uti
 
 ## Usage
 
-The `prodmill-engine` has two modes of operation: `create-spec` and `next-task`. For detailed integration instructions, please refer to the `INTEGRATION.md` file.
+The `prodmill-engine` has three modes of operation: `create-spec`, `next-task`, and `update-spec-list`. For detailed integration instructions, please refer to the `INTEGRATION.md` file.
 
 ### `create-spec`
 
