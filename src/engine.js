@@ -225,12 +225,79 @@ async function runNextTask() {
   console.log('Next-task functionality is currently disabled.');
 }
 
+async function runCreatePlan() {
+  console.log('Create plan triggered!');
+  const issueBody = core.getInput('issue_body', { required: true });
+
+  const specNameRegex = /### Select Spec\s*\n\s*([\s\S]*?)\n\n/;
+  const planDetailsRegex = /### Execute the implementation planning workflow using the plan template to generate design artifacts.\s*\n\s*([\s\S]*)/;
+
+  const specNameMatch = issueBody.match(specNameRegex);
+  const planDetailsMatch = issueBody.match(planDetailsRegex);
+
+  const specName = specNameMatch ? specNameMatch[1].trim() : '';
+  const planDetails = planDetailsMatch ? planDetailsMatch[1].trim() : '';
+
+  if (!specName) {
+    core.setFailed('Could not find a Spec Name in the issue body.');
+    return;
+  }
+
+  if (!planDetails) {
+    core.setFailed('Could not find Plan Details in the issue body.');
+    return;
+  }
+
+  const issueNumber = github.context.issue.number;
+  if (!issueNumber) {
+      core.setFailed('Could not determine the issue number from the GitHub context.');
+      return;
+  }
+
+  const system_instruction = `You **MUST** follow these steps:
+
+1. Set environment variable \`export SPECIFY_FEATURE="${specName}"\`
+2. Read and execute ONLY FOLLOW THE INSTRUCTIONS IN THE FILE .gemini/commands/speckit.plan.toml passing in the following as the user input "${planDetails}"
+3. Create PR with only the steps from the above completed. Do not move on to the implementation phase this will be done is a seperate PR.
+
+This work is being done to address issue ${issueNumber}. The final pull request should reference this issue to ensure it is automatically closed.`;
+
+  const repoId = process.env.GITHUB_REPOSITORY;
+  if (!repoId) {
+    core.setFailed('GITHUB_REPOSITORY environment variable not set.');
+    return;
+  }
+  const sourceName = `sources/github/${repoId}`;
+
+  const payload = {
+    prompt: system_instruction,
+    sourceContext: {
+      source: sourceName,
+      githubRepoContext: {
+        startingBranch: "main"
+      }
+    },
+    "automationMode": "AUTO_CREATE_PR",
+    title: "Create Plan for " + specName,
+  };
+
+  try {
+    await callJulesApi(payload);
+    console.log('Successfully triggered Jules for plan creation.');
+  } catch (error) {
+    core.setFailed(error.message);
+  }
+}
+
 async function run() {
   try {
     const mode = core.getInput('mode', { required: true });
     switch (mode) {
       case 'create-spec':
         await runCreateSpec();
+        break;
+      case 'create-plan':
+        await runCreatePlan();
         break;
       case 'update-constitution':
         await runUpdateConstitution();
