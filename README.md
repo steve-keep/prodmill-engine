@@ -18,14 +18,14 @@ The engine is designed to be run in the context of a project repository that uti
 
 ## Usage
 
-The `prodmill-engine` has three modes of operation: `create-spec`, `next-task`, and `update-spec-list`. For detailed integration instructions, please refer to the `INTEGRATION.md` file.
+The `prodmill-engine` has five modes of operation: `create-spec`, `create-plan`, `update-constitution`, `update-spec-list`, and `next-task`. For detailed integration instructions, please refer to the `INTEGRATION.md` file.
 
 ### `create-spec`
 
-This mode is used to create a new specification from a GitHub issue.
+This mode is used to create a new specification from a GitHub issue. When an issue is opened, this action parses the "Product Specification" section and passes it to the AI to generate the necessary spec files.
 
 ```yaml
-- name: Run ProdMill
+- name: Run Prod-Mill Engine
   uses: steve-keep/prodmill-engine@main
   with:
     mode: 'create-spec'
@@ -33,23 +33,52 @@ This mode is used to create a new specification from a GitHub issue.
     issue_body: ${{ github.event.issue.body }}
 ```
 
-### `next-task`
+### `create-plan`
 
-This mode is used to determine the next task to work on.
+This mode is triggered when an issue is labeled with `create-plan`. It instructs the AI to generate a detailed implementation plan based on the specification and plan details provided in the issue.
 
 ```yaml
-- name: Run ProdMill
+- name: Run Prod-Mill Engine
   uses: steve-keep/prodmill-engine@main
   with:
-    mode: 'next-task'
+    mode: 'create-plan'
     jules_api_key: ${{ secrets.JULES_API_KEY }}
+    issue_body: ${{ github.event.issue.body }}
 ```
 
-### Inputs
+### `update-constitution`
 
-*   `mode` (required): The operation mode. Either `"create-spec"` or `"next-task"`.
-*   `jules_api_key` (required): The API key for the Jules AI agent.
-*   `issue_body` (optional): The body of the issue that triggered the workflow. Required for `create-spec` mode.
+This mode is triggered when an issue is opened with the `update-constitution` label. It takes the "Proposed Constitution Update" from the issue body and asks the AI to update the project's constitution file.
+
+```yaml
+- name: Run Prod-Mill Engine
+  uses: steve-keep/prodmill-engine@main
+  with:
+    mode: 'update-constitution'
+    jules_api_key: ${{ secrets.JULES_API_KEY }}
+    issue_body: ${{ github.event.issue.body }}
+```
+
+### `update-spec-list`
+
+This mode runs on a schedule or on push to the `main` branch. It scans the `./specs` directory and updates the dropdown list in the `create-plan` issue template to ensure it always shows the latest available specifications.
+
+```yaml
+- name: Run Prod-Mill Engine
+  uses: steve-keep/prodmill-engine@main
+  with:
+    mode: 'update-spec-list'
+```
+
+### `next-task` (Disabled)
+
+This mode was intended to determine the next task to work on, but it is currently disabled.
+
+## Inputs
+
+*   `mode` (required): The operation mode. One of `"create-spec"`, `"create-plan"`, `"update-constitution"`, `"update-spec-list"`, or `"next-task"`.
+*   `jules_api_key` (required): The API key for the Jules AI agent. Required for modes that call the AI (`create-spec`, `create-plan`, `update-constitution`).
+*   `issue_body` (optional): The body of the issue that triggered the workflow. Required for `create-spec`, `create-plan`, and `update-constitution` modes.
 
 ### Outputs
 
