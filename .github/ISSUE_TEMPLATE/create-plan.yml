@@ -1,0 +1,21 @@
+name: Create Plan
+description: Create a new plan for a spec.
+title: "[PLAN] "
+labels: ["create-plan"]
+body:
+  - type: dropdown
+    id: spec
+    attributes:
+      label: Select Spec
+      description: Which spec do you want to create a plan for?
+      options:
+        - placeholder
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: Execute the implementation planning workflow using the plan template to generate design artifacts.
+      description: Provide the plan details here.
+    validations:
+      required: true

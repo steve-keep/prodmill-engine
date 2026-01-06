@@ -6,6 +6,61 @@ const { promisify } = require('util');
 const exec = promisify(callbackExec);
 const https = require('https');
 const github = require('@actions/github');
+const yaml = require('js-yaml');
+
+async function runUpdateSpecList() {
+    console.log('Update spec list triggered!');
+    const specDir = './specs';
+    const issueTemplatePath = '.github/ISSUE_TEMPLATE/create-plan.yml';
+
+    try {
+        const files = await fs.readdir(specDir);
+        const dirs = [];
+        for (const file of files) {
+            const stat = await fs.stat(path.join(specDir, file));
+            if (stat.isDirectory()) {
+                dirs.push(file);
+            }
+        }
+
+        if (dirs.length === 0) {
+            console.log('No spec directories found. Skipping update.');
+            return;
+        }
+
+        const issueTemplate = await fs.readFile(issueTemplatePath, 'utf8');
+        const issueTemplateJson = yaml.load(issueTemplate);
+
+        const dropdown = issueTemplateJson.body.find(field => field.id === 'spec');
+        const currentOptions = dropdown.attributes.options;
+
+        const sortedCurrentOptions = [...currentOptions].sort();
+        const sortedDirs = [...dirs].sort();
+
+        if (JSON.stringify(sortedCurrentOptions) === JSON.stringify(sortedDirs)) {
+            console.log('Issue template is already up to date. Skipping update.');
+            return;
+        }
+
+        dropdown.attributes.options = dirs;
+        const updatedIssueTemplate = yaml.dump(issueTemplateJson);
+        await fs.writeFile(issueTemplatePath, updatedIssueTemplate, 'utf8');
+
+        await exec('git config --global user.name "github-actions[bot]"');
+        await exec('git config --global user.email "github-actions[bot]@users.noreply.github.com"');
+        await exec(`git add ${issueTemplatePath}`);
+        await exec('git commit -m "docs: update spec dropdown in issue templates [skip ci]"');
+        await exec('git push');
+
+        console.log('Successfully updated the issue template.');
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            console.log('`specs` directory not found. Skipping update.');
+            return;
+        }
+        core.setFailed(error.message);
+    }
+}
 
 async function callJulesApi(payload) {
   const apiKey = core.getInput('jules_api_key', { required: true });
@@ -182,6 +237,9 @@ async function run() {
         break;
       case 'next-task':
         await runNextTask();
+        break;
+      case 'update-spec-list':
+        await runUpdateSpecList();
         break;
       default:
         core.setFailed(`Invalid mode: ${mode}`);
