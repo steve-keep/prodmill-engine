@@ -34,13 +34,10 @@ func RunCreateSpec() error {
 	sourceName := fmt.Sprintf("sources/github/%s", repoID)
 
 	systemInstruction := fmt.Sprintf(
-		`read and execute the instructions in the file .gemini/commands/speckit.specify.toml using the following as the spec:
+		`You **MUST** follow these steps:
 
----
-%s
----
-
-DO NOT IMPLEMENT THE FEATURE. ONLY FOLLOW THE INSTRUCTIONS IN THE FILE .gemini/commands/speckit.specify.toml.
+1. Read and execute **ONLY FOLLOW THE INSTRUCTIONS IN THE FILE** .gemini/commands/speckit.specify.toml. For the user input, use the content between the following triple-dashed lines: --- %s ---
+2. Create PR with only the steps from the above completed. Do not move on to the implementation phase this will be done is a seperate PR.
 
 This work is being done to address issue #%s. The final pull request should reference this issue to ensure it is automatically closed.`,
 		specification,
