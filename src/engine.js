@@ -416,7 +416,7 @@ async function run() {
 }
 
 // Check if this script is the main module being run
-if (require.main === module) {
+if (require.main === module && !process.env.VITEST) {
   run();
 }
 
