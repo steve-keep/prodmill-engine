@@ -1,4 +1,3 @@
-const { describe, it, expect, vi, beforeEach } = require('vitest');
 const {
   run,
   runUpdateSpecList,
