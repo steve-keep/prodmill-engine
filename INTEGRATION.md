@@ -40,6 +40,7 @@ jobs:
           mode: 'create-spec'
           jules_api_key: ${{ secrets.JULES_API_KEY }}
           issue_body: ${{ github.event.issue.body }}
+          issue_number: ${{ github.event.issue.number }}
 ```
 
 ### Required Secrets
@@ -83,6 +84,7 @@ jobs:
           mode: 'create-plan'
           jules_api_key: ${{ secrets.JULES_API_KEY }}
           issue_body: ${{ github.event.issue.body }}
+          issue_number: ${{ github.event.issue.number }}
 ```
 
 ### Issue Template
@@ -265,6 +267,7 @@ jobs:
           mode: 'update-constitution'
           jules_api_key: ${{ secrets.JULES_API_KEY }}
           issue_body: ${{ github.event.issue.body }}
+          issue_number: ${{ github.event.issue.number }}
 ```
 
 ### Required Secrets

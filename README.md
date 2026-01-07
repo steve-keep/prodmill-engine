@@ -1,28 +1,25 @@
 # Prod-Mill Engine
 
-The `prodmill-engine` is a GitHub Action that serves as the core logic for the Prod-Mill workflow. It uses `spec-kit` to manage technical specifications. The engine identifies the highest-priority task, gathers the necessary context, and constructs a payload for an AI agent to execute.
+The `prodmill-engine` is a GitHub Action that serves as the core logic for the Prod-Mill workflow. It is a Go-based application that provides six modes of operation to automate various software development tasks.
 
 ## How it Works
 
-The engine is designed to be run in the context of a project repository that utilizes `spec-kit`. It performs the following steps:
+The engine is designed to be run as a GitHub Action. Its behavior is determined by the `mode` input, which can be one of the following:
 
-1.  **Workspace Discovery:** The engine first identifies the workspace, which is the root of the project repository. It looks for a `PRODMILL_WORKSPACE` environment variable, and if not found, defaults to the current working directory. It then verifies the existence of the `.spec-kit/` directory.
-
-2.  **Task Identification:** The engine identifies the highest-priority task that is ready for execution from the `spec-kit` plan.
-
-3.  **Context Extraction:** Once a task is identified, the engine reads the `.spec-kit/plan.md` file to find the technical context for that task.
-
-4.  **Constitution Reading:** The engine reads the `.spec-kit/constitution.md` file, which contains the "Guardrail Rules" for the project.
-
-5.  **Payload Construction:** Finally, the engine constructs a JSON payload that includes the task, the extracted plan context, the constitution, and a system instruction for the AI agent.
+-   `create-spec`: Parses a GitHub issue to create a new product specification.
+-   `create-plan`: Generates a detailed implementation plan from a specification.
+-   `create-tasks`: Breaks down a specification into discrete development tasks.
+-   `update-constitution`: Updates a project's constitution file based on an issue.
+-   `update-spec-list`: Keeps issue templates up-to-date with the latest project specs.
+-   `next-task`: (Currently disabled) Intended to determine the next task to work on.
 
 ## Usage
 
-The `prodmill-engine` has six modes of operation: `create-spec`, `create-plan`, `create-tasks`, `update-constitution`, `update-spec-list`, and `next-task`. For detailed integration instructions, please refer to the `INTEGRATION.md` file.
+For detailed integration instructions, please refer to the `INTEGRATION.md` file. The following is a brief overview of the available modes.
 
 ### `create-spec`
 
-This mode is used to create a new specification from a GitHub issue. When an issue is opened, this action parses the "Product Specification" section and passes it to the AI to generate the necessary spec files.
+This mode is used to create a new specification from a GitHub issue.
 
 ```yaml
 - name: Run Prod-Mill Engine
@@ -31,11 +28,12 @@ This mode is used to create a new specification from a GitHub issue. When an iss
     mode: 'create-spec'
     jules_api_key: ${{ secrets.JULES_API_KEY }}
     issue_body: ${{ github.event.issue.body }}
+    issue_number: ${{ github.event.issue.number }}
 ```
 
 ### `create-plan`
 
-This mode is triggered when an issue is labeled with `create-plan`. It instructs the AI to generate a detailed implementation plan based on the specification and plan details provided in the issue.
+This mode generates a detailed implementation plan based on a specification.
 
 ```yaml
 - name: Run Prod-Mill Engine
@@ -44,11 +42,12 @@ This mode is triggered when an issue is labeled with `create-plan`. It instructs
     mode: 'create-plan'
     jules_api_key: ${{ secrets.JULES_API_KEY }}
     issue_body: ${{ github.event.issue.body }}
+    issue_number: ${{ github.event.issue.number }}
 ```
 
 ### `create-tasks`
 
-This mode is triggered when an issue is labeled with `create-tasks`. It instructs the AI to break down a specification into discrete development tasks.
+This mode breaks down a specification into discrete development tasks.
 
 ```yaml
 - name: Run Prod-Mill Engine
@@ -62,7 +61,7 @@ This mode is triggered when an issue is labeled with `create-tasks`. It instruct
 
 ### `update-constitution`
 
-This mode is triggered when an issue is opened with the `update-constitution` label. It takes the "Proposed Constitution Update" from the issue body and asks the AI to update the project's constitution file.
+This mode updates the project's constitution file based on an issue.
 
 ```yaml
 - name: Run Prod-Mill Engine
@@ -71,11 +70,12 @@ This mode is triggered when an issue is opened with the `update-constitution` la
     mode: 'update-constitution'
     jules_api_key: ${{ secrets.JULES_API_KEY }}
     issue_body: ${{ github.event.issue.body }}
+    issue_number: ${{ github.event.issue.number }}
 ```
 
 ### `update-spec-list`
 
-This mode runs on a schedule or on push to the `main` branch. It scans the `./specs` directory and updates the dropdown list in the `create-plan` and `create-tasks` issue templates to ensure it always shows the latest available specifications.
+This mode keeps issue templates up-to-date with the latest project specs.
 
 ```yaml
 - name: Run Prod-Mill Engine
@@ -86,25 +86,37 @@ This mode runs on a schedule or on push to the `main` branch. It scans the `./sp
 
 ### `next-task` (Disabled)
 
-This mode was intended to determine the next task to work on, but it is currently disabled.
+This mode is currently disabled.
 
 ## Inputs
 
 *   `mode` (required): The operation mode. One of `"create-spec"`, `"create-plan"`, `"create-tasks"`, `"update-constitution"`, `"update-spec-list"`, or `"next-task"`.
-*   `jules_api_key` (required): The API key for the Jules AI agent. Required for modes that call the AI (`create-spec`, `create-plan`, `create-tasks`, `update-constitution`).
-*   `issue_body` (optional): The body of the issue that triggered the workflow. Required for `create-spec`, `create-plan`, `create-tasks`, and `update-constitution` modes.
-*   `issue_number` (optional): The number of the issue that triggered the workflow. Required for `create-tasks`.
+*   `jules_api_key` (required): The API key for the Jules AI agent.
+*   `issue_body` (optional): The body of the issue that triggered the workflow.
+*   `issue_number` (optional): The number of the issue that triggered the workflow. Required for "create-spec", "create-plan", "create-tasks", and "update-constitution" modes.
 
 ### Outputs
 
-*   `issue_id`: The ID of the issue that is being processed.
+*   `issue_id`: The ID of the issue being processed.
 
 ## Local Development
 
-To run the `prodmill-engine` locally, you will need to have Node.js installed. You can then run the `engine.js` script directly:
+To run the `prodmill-engine` locally, you will need to have Go installed. You can then run the application from the root of the repository:
 
 ```bash
-PRODMILL_WORKSPACE=/path/to/your/project node src/engine.js
+export INPUT_MODE="<your_mode>"
+export INPUT_JULES_API_KEY="<your_api_key>"
+export INPUT_ISSUE_BODY="<your_issue_body>"
+export INPUT_ISSUE_NUMBER="<your_issue_number>"
+export GITHUB_REPOSITORY="<owner>/<repo>"
+export GITHUB_REF_NAME="<ref>"
+
+go run .
 ```
 
-Make sure to set the `PRODMILL_WORKSPACE` environment variable to the root of a project that contains a `.spec-kit/` directory.
+You can also build and run the binary directly:
+
+```bash
+go build -o prodmill-engine .
+./prodmill-engine
+```

@@ -11,7 +11,7 @@ inputs:
     description: 'The body of the GitHub issue.'
     required: false
   issue_number:
-    description: 'The number of the GitHub issue.'
+    description: 'The number of the GitHub issue. Required for "create-spec", "create-plan", "create-tasks", and "update-constitution" modes.'
     required: false
 outputs:
   issue_id:
