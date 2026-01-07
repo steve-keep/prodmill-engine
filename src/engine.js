@@ -159,7 +159,9 @@ async function runCreateSpec() {
   const specifyCommandFile = '.gemini/commands/speckit.specify.toml';
   const system_instruction = `read and execute the instructions in the file ${specifyCommandFile} using the following as the spec:
 
-"${specification}"
+---
+${specification}
+---
 
 DO NOT IMPLEMENT THE FEATURE. ONLY FOLLOW THE INSTRUCTIONS IN THE FILE ${specifyCommandFile}.
 
@@ -219,7 +221,9 @@ async function runUpdateConstitution() {
 
   const system_instruction = `read and execute the instructions in the file .gemini/commands/speckit.constitution.toml using the following core principles:
 
-"${userPrinciples}"
+---
+${userPrinciples}
+---
 
 This work is being done to address issue #${issueNumber}. The final pull request should reference this issue to ensure it is automatically closed.`;
 
@@ -343,9 +347,12 @@ async function runCreateTasks() {
       return;
   }
 
-  const system_instruction = `You MUST follow these steps:
+  const system_instruction = `You **MUST** follow these steps:
 
-1. Set environment variable export SPECIFY_FEATURE="${specName}"
+1. Set the value of an environment variable named \`SPECIFY_FEATURE\`. The value for this variable is the content between the following triple-dashed lines:
+---
+${specName}
+---
 2. Read and execute ONLY FOLLOW THE INSTRUCTIONS IN THE FILE .gemini/commands/speckit.tasks.toml
 3. Create PR with only the steps from the above completed. Do not move on to the implementation phase this will be done is a seperate PR.
 
