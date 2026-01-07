@@ -32,9 +32,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Run Prod-Mill Engine
+      - name: Run ProdMill
         uses: steve-keep/prodmill-engine@main
         with:
           mode: 'create-spec'
@@ -76,9 +76,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Run Prod-Mill Engine
+      - name: Run ProdMill
         uses: steve-keep/prodmill-engine@main
         with:
           mode: 'create-plan'
@@ -153,7 +153,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Prod-Mill Engine
+      - name: Run ProdMill
         uses: steve-keep/prodmill-engine@main
         with:
           mode: 'create-tasks'
@@ -218,7 +218,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Update spec list in issue templates
         uses: steve-keep/prodmill-engine@main
@@ -257,9 +257,12 @@ jobs:
   update-constitution:
     if: contains(github.event.issue.labels.*.name, 'update-constitution')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Run ProdMill
         uses: steve-keep/prodmill-engine@main
