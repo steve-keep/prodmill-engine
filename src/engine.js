@@ -416,3 +416,14 @@ async function run() {
 }
 
 run();
+
+module.exports = {
+  runUpdateSpecList,
+  callJulesApi,
+  runCreateSpec,
+  runUpdateConstitution,
+  runNextTask,
+  runCreatePlan,
+  runCreateTasks,
+  run
+};
