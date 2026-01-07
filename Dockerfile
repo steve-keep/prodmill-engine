@@ -25,4 +25,4 @@ RUN apk --no-cache add git
 COPY --from=builder /app/prodmill-engine .
 
 # Set the entrypoint for the container
-ENTRYPOINT ["./prodmill-engine"]
+ENTRYPOINT ["/app/prodmill-engine"]
