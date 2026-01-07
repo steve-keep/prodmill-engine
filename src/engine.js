@@ -138,104 +138,7 @@ async function callJulesApi(payload) {
 
 async function runCreateSpec() {
   console.log('Create spec triggered!');
-  const issueBody = core.getInput('issue_body', { required: true });
-
-  const specRegex = /### Product Specification\s*([\s\S]*)/;
-  const specMatch = issueBody.match(specRegex);
-
-  const specification = specMatch ? specMatch[1].trim() : '';
-
-  if (!specification) {
-    core.setFailed('Could not find a Product Specification in the issue body.');
-    return;
-  }
-
-  const issueNumber = github.context.issue.number;
-  if (!issueNumber) {
-      core.setFailed('Could not determine the issue number from the GitHub context.');
-      return;
-  }
-
-  const specifyCommandFile = '.gemini/commands/speckit.specify.toml';
-  const system_instruction = `read and execute the instructions in the file ${specifyCommandFile} using the following as the spec:
-
----
-${specification}
----
-
-DO NOT IMPLEMENT THE FEATURE. ONLY FOLLOW THE INSTRUCTIONS IN THE FILE ${specifyCommandFile}.
-
-This work is being done to address issue #${issueNumber}. The final pull request should reference this issue to ensure it is automatically closed.`;
-
-  const repoId = process.env.GITHUB_REPOSITORY;
-  if (!repoId) {
-    core.setFailed('GITHUB_REPOSITORY environment variable not set.');
-    return;
-  }
-  const sourceName = `sources/github/${repoId}`;
-
-  const payload = {
-    prompt: system_instruction,
-    sourceContext: {
-      source: sourceName,
-      githubRepoContext: {
-        startingBranch: "main"
-      }
-    },
-    "automationMode": "AUTO_CREATE_PR",
-    title: "Create Specification"
-  };
-
-  try {
-    await callJulesApi(payload);
-    console.log('Successfully triggered Jules for spec creation.');
-  } catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
-async function runUpdateConstitution() {
-  console.log('Update constitution triggered!');
-  const issueBody = core.getInput('issue_body', { required: true });
-
-  const heading = '### Proposed Constitution Update';
-  const headingIndex = issueBody.indexOf(heading);
-
-  if (headingIndex === -1) {
-    core.setFailed(`Could not find the required heading in the issue body: "${heading}"`);
-    return;
-  }
-
-  const userPrinciples = issueBody.substring(headingIndex + heading.length).trim();
-
-  if (!userPrinciples) {
-    core.setFailed('No content found under "### Proposed Constitution Update" heading.');
-    return;
-  }
-
-  const issueNumber = github.context.issue.number;
-  if (!issueNumber) {
-      core.setFailed('Could not determine the issue number from the GitHub context.');
-      return;
-  }
-
-  const system_instruction = `read and execute the instructions in the file .gemini/commands/speckit.constitution.toml using the following core principles:
-
----
-${userPrinciples}
----
-
-This work is being done to address issue #${issueNumber}. The final pull request should reference this issue to ensure it is automatically closed.`;
-
-  const repoId = process.env.GITHUB_REPOSITORY;
-  if (!repoId) {
-    core.setFailed('GITHUB_REPOSITORY environment variable not set.');
-    return;
-  }
-  const sourceName = `sources/github/${repoId}`;
-
-  const payload = {
-    prompt: system_instruction,
+  const issueBody = core.getInput('issue_body', { required:.message,
     sourceContext: {
       source: sourceName,
       githubRepoContext: {
@@ -415,4 +318,19 @@ async function run() {
   }
 }
 
-run();
+// Check if this script is the main module being run
+if (require.main === module) {
+  run();
+}
+
+// Export functions for testing
+module.exports = {
+  runUpdateSpecList,
+  callJulesApi,
+  runCreateSpec,
+  runUpdateConstitution,
+  runNextTask,
+  runCreatePlan,
+  runCreateTasks,
+  run
+};
