@@ -36,12 +36,12 @@ func RunUpdateConstitution() error {
 	}
 	sourceName := fmt.Sprintf("sources/github/%s", repoID)
 
-	systemInstruction := `You must follow the following steps:
+	systemInstruction := `You **MUST** follow these steps:
 
-1. read and execute the instructions in the file .gemini/commands/speckit.constitution.toml using the following core principles: {{CONSTITUTION}}
-2. Create a PR one step one is complete.
+1. Read and execute **ONLY FOLLOW THE INSTRUCTIONS IN THE FILE** .gemini/commands/speckit.constitution.toml. For the user input, use the content between the following triple-dashed lines: --- {{CONSTITUTION}} ---
+2. Create PR with only the steps from the above completed. Do not move on to the implementation phase this will be done is a seperate PR.
 
-This work is being done to address issue {{ISSUE_NUMBER}}. The final pull request should reference this issue to ensure it is automatically closed.`
+This work is being done to address issue {{ISSUE_NUMBER}}. The final pull request should reference this issue to ensure it is automatically closed. `
 	systemInstruction = strings.Replace(systemInstruction, "{{CONSTITUTION}}", userPrinciples, 1)
 	systemInstruction = strings.Replace(systemInstruction, "{{ISSUE_NUMBER}}", "#"+issueNumber, 1)
 
