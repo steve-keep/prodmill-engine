@@ -36,17 +36,14 @@ func RunUpdateConstitution() error {
 	}
 	sourceName := fmt.Sprintf("sources/github/%s", repoID)
 
-	systemInstruction := fmt.Sprintf(
-		`read and execute the instructions in the file .gemini/commands/speckit.constitution.toml using the following core principles:
+	systemInstruction := `You must follow the following steps:
 
----
-%s
----
+1. read and execute the instructions in the file .gemini/commands/speckit.constitution.toml using the following core principles: {{CONSTITUTION}}
+2. Create a PR one step one is complete.
 
-This work is being done to address issue #%s. The final pull request should reference this issue to ensure it is automatically closed.`,
-		userPrinciples,
-		issueNumber,
-	)
+This work is being done to address issue {{ISSUE_NUMBER}}. The final pull request should reference this issue to ensure it is automatically closed.`
+	systemInstruction = strings.Replace(systemInstruction, "{{CONSTITUTION}}", userPrinciples, 1)
+	systemInstruction = strings.Replace(systemInstruction, "{{ISSUE_NUMBER}}", "#"+issueNumber, 1)
 
 	payload := map[string]interface{}{
 		"prompt":        systemInstruction,
