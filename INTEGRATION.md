@@ -2,96 +2,121 @@
 
 This document outlines the steps to integrate ProdMill into your repository.
 
-## `create-spec` Workflow
+## Consolidated ProdMill Workflow
 
-The `create-spec` workflow is triggered when a new issue is created in your repository. It uses ProdMill to create a new specification based on the issue's content by calling an external AI service.
+The ProdMill engine is designed to be run from a single, consolidated GitHub Actions workflow. The workflow is triggered when an issue is opened or labeled, and it uses the issue's labels to determine which mode to run.
 
 ### Triggering the Workflow
 
-To trigger the `create-spec` workflow, you need to create a new issue using the "Create Spec" issue form. This form will automatically apply the `create-spec` label to the issue, which is required for the workflow to run.
+To trigger the workflow, you need to create an issue using one of the following issue forms:
 
-The issue form has the following fields:
-
-- **Product Requirements & Goals:** A detailed specification of the product's requirements and goals. This field corresponds to the `### Product Specification` section in the issue body.
-- **High-Level Technical Approach & Architecture:** An outline of the high-level technical approach and architecture for the project. This field corresponds to the `### Technical Plan` section in the issue body.
-- **Tech Stack:** The primary tech stack for the project.
+-   **Create Spec:** This form will automatically apply the `create-spec` label to the issue, which is required for the workflow to run.
+-   **Create Plan:** This form will automatically apply the `create-plan` label to the issue, which is required for the workflow to run.
+-   **Create Tasks:** This form will automatically apply the `create-tasks` label to the issue, which is required for the workflow to run.
+-   **Update Constitution:** This form will automatically apply the `update-constitution` label to the issue, which is required for the workflow to run.
 
 ### Workflow Configuration
 
-To use the `create-spec` workflow, you need to create a file named `create-spec.yml` in the `.github/workflows/` directory of your repository with the following content:
+To use the consolidated workflow, you need to create a file named `prodmill.yml` in the `.github/workflows/` directory of your repository with the following content:
 
 ```yaml
-name: Create Spec
+name: ProdMill
 
 on:
   issues:
-    types: [opened]
+    types: [opened, labeled]
 
 jobs:
   create-spec:
+    if: (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'create-spec')) || (github.event.action == 'labeled' && github.event.label.name == 'create-spec')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run ProdMill
+      - name: Run ProdMill Engine
         uses: steve-keep/prodmill-engine@main
         with:
           mode: 'create-spec'
           jules_api_key: ${{ secrets.JULES_API_KEY }}
           issue_body: ${{ github.event.issue.body }}
           issue_number: ${{ github.event.issue.number }}
-```
 
-### Required Secrets
-
-The `create-spec` workflow requires the following secret to be configured in your repository:
-
-- `JULES_API_KEY`: Your API key for the Jules service, which is used for specification generation.
-
-These secrets can be added in the "Secrets and variables" > "Actions" section of your repository's settings.
-
-## `create-plan` Workflow
-
-The `create-plan` workflow is triggered when an issue is labeled with `create-plan`. It uses ProdMill to generate a detailed implementation plan based on a selected specification.
-
-### Triggering the Workflow
-
-To trigger this workflow, create an issue using the "Create Plan" issue form. This form will apply the `create-plan` label, which triggers the workflow. The form requires you to select an existing specification and provide details for the implementation plan.
-
-### Workflow Configuration
-
-To use the `create-plan` workflow, you need to create a file named `create-plan.yml` in the `.github/workflows/` directory of your repository with the following content:
-
-```yaml
-name: Create Plan
-
-on:
-  issues:
-    types: [labeled]
-
-jobs:
   create-plan:
-    if: github.event.label.name == 'create-plan'
+    if: (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'create-plan')) || (github.event.action == 'labeled' && github.event.label.name == 'create-plan')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run ProdMill
+      - name: Run ProdMill Engine
         uses: steve-keep/prodmill-engine@main
         with:
           mode: 'create-plan'
           jules_api_key: ${{ secrets.JULES_API_KEY }}
           issue_body: ${{ github.event.issue.body }}
           issue_number: ${{ github.event.issue.number }}
+
+  create-tasks:
+    if: (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'create-tasks')) || (github.event.action == 'labeled' && github.event.label.name == 'create-tasks')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run ProdMill Engine
+        uses: steve-keep/prodmill-engine@main
+        with:
+          mode: 'create-tasks'
+          jules_api_key: ${{ secrets.JULES_API_KEY }}
+          issue_body: ${{ github.event.issue.body }}
+          issue_number: ${{ github.event.issue.number }}
+
+  update-constitution:
+    if: (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'update-constitution')) || (github.event.action == 'labeled' && github.event.label.name == 'update-constitution')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run ProdMill Engine
+        uses: steve-keep/prodmill-engine@main
+        with:
+          mode: 'update-constitution'
+          jules_api_key: ${{ secrets.JULES_API_KEY }}
+          issue_body: ${{ github.event.issue.body }}
+          issue_number: ${{ github.event.issue.number }}
 ```
 
-### Issue Template
+### Issue Templates
 
-The workflow relies on a specific issue template to gather the necessary information. The `update-spec-list` workflow (see below) can automatically populate a dropdown in this template with the names of the spec directories found in the `./specs` folder.
+The workflow relies on specific issue templates to gather the necessary information. You will need to create the following files in your `.github/ISSUE_TEMPLATE/` directory:
 
-Create a file named `create-plan.yml` in the `.github/ISSUE_TEMPLATE/` directory with the following content:
+#### `.github/ISSUE_TEMPLATE/create-spec.yml`
+
+```yaml
+name: Create Spec
+description: Create a new specification for Prod-Mill.
+title: "[Create Spec]: "
+labels: ["create-spec"]
+body:
+  - type: textarea
+    id: spec
+    attributes:
+      label: Product Requirements & Goals
+      description: "Provide a detailed specification of the product's requirements and goals."
+      placeholder: "### Product Specification\n\n..."
+    validations:
+      required: true
+```
+
+#### `.github/ISSUE_TEMPLATE/create-plan.yml`
 
 ```yaml
 name: Create Plan
@@ -117,56 +142,7 @@ body:
       required: true
 ```
 
-### Required Secrets
-
-The `create-plan` workflow requires the following secret to be configured in your repository:
-
-- `JULES_API_KEY`: Your API key for the Jules service, which is used for plan generation.
-
-## `create-tasks` Workflow
-
-The `create-tasks` workflow is triggered when an issue is labeled with `create-tasks`. It uses ProdMill to break down a specification into discrete development tasks.
-
-### Triggering the Workflow
-
-To trigger this workflow, create an issue using the "Create Tasks" issue form. This form will apply the `create-tasks` label, which triggers the workflow. The form requires you to select an existing specification.
-
-### Workflow Configuration
-
-To use the `create-tasks` workflow, you need to create a file named `create-tasks.yml` in the `.github/workflows/` directory of your repository with the following content:
-
-```yaml
-name: Create Tasks
-
-on:
-  issues:
-    types: [labeled]
-
-jobs:
-  create-tasks:
-    if: github.event.label.name == 'create-tasks'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run ProdMill
-        uses: steve-keep/prodmill-engine@main
-        with:
-          mode: 'create-tasks'
-          jules_api_key: ${{ secrets.JULES_API_KEY }}
-          issue_body: ${{ github.event.issue.body }}
-          issue_number: ${{ github.event.issue.number }}
-```
-
-### Issue Template
-
-The workflow relies on a specific issue template to gather the necessary information. The `update-spec-list` workflow (see below) can automatically populate a dropdown in this template with the names of the spec directories found in the `./specs` folder.
-
-Create a file named `create-tasks.yml` in the `.github/ISSUE_TEMPLATE/` directory with the following content:
+#### `.github/ISSUE_TEMPLATE/create-tasks.yml`
 
 ```yaml
 name: Create Tasks
@@ -185,11 +161,29 @@ body:
       required: true
 ```
 
+#### `.github/ISSUE_TEMPLATE/update-constitution.yml`
+
+```yaml
+name: Update Constitution
+description: "Propose an update to the project's constitution.md."
+title: "[Constitution]: "
+labels: ["update-constitution"]
+body:
+  - type: textarea
+    id: constitution-update
+    attributes:
+      label: Proposed Constitution Update
+      description: "Describe the proposed changes or additions to the constitution."
+      placeholder: "e.g., Add a new principle about..."
+    validations:
+      required: true
+```
+
 ### Required Secrets
 
-The `create-tasks` workflow requires the following secret to be configured in your repository:
+The consolidated workflow requires the following secret to be configured in your repository:
 
-- `JULES_API_KEY`: Your API key for the Jules service, which is used for task generation.
+-   `JULES_API_KEY`: Your API key for the Jules service.
 
 ## `update-spec-list` Workflow
 
@@ -229,55 +223,6 @@ jobs:
 ### Required Secrets
 
 This workflow uses the default `GITHUB_TOKEN` to commit changes. No additional secrets are required.
-
-## `update-constitution` Workflow
-
-The `update-constitution` workflow is triggered when a new issue is created with the "Update Constitution" issue form. It uses ProdMill to update the constitution.
-
-### Triggering the Workflow
-
-To trigger the `update-constitution` workflow, you need to create a new issue using the "Update Constitution" issue form. This form will automatically apply the `update-constitution` label to the issue.
-
-The issue form has the following fields:
-
-- **Proposed Constitution Update:** A description of the proposed changes or additions to the constitution.
-
-### Workflow Configuration
-
-To use the `update-constitution` workflow, you need to create a file named `update-constitution.yml` in the `.github/workflows/` directory of your repository with the following content:
-
-```yaml
-name: Update Constitution
-
-on:
-  issues:
-    types: [opened]
-
-jobs:
-  update-constitution:
-    if: contains(github.event.issue.labels.*.name, 'update-constitution')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run ProdMill
-        uses: steve-keep/prodmill-engine@main
-        with:
-          mode: 'update-constitution'
-          jules_api_key: ${{ secrets.JULES_API_KEY }}
-          issue_body: ${{ github.event.issue.body }}
-          issue_number: ${{ github.event.issue.number }}
-```
-
-### Required Secrets
-
-The `update-constitution` workflow requires the following secret to be configured in your repository:
-
-- `JULES_API_KEY`: Your API key for the Jules service.
 
 ## `next-task` Workflow (Disabled)
 

@@ -15,63 +15,11 @@ The engine is designed to be run as a GitHub Action. Its behavior is determined 
 
 ## Usage
 
-For detailed integration instructions, please refer to the `INTEGRATION.md` file. The following is a brief overview of the available modes.
+The Prod-Mill engine is designed to be run from a consolidated GitHub Actions workflow. The workflow is triggered when an issue is opened or labeled, and it uses the issue's labels to determine which mode to run.
 
-### `create-spec`
+For detailed integration instructions and the full workflow file, please refer to the `INTEGRATION.md` file.
 
-This mode is used to create a new specification from a GitHub issue.
-
-```yaml
-- name: Run Prod-Mill Engine
-  uses: steve-keep/prodmill-engine@main
-  with:
-    mode: 'create-spec'
-    jules_api_key: ${{ secrets.JULES_API_KEY }}
-    issue_body: ${{ github.event.issue.body }}
-    issue_number: ${{ github.event.issue.number }}
-```
-
-### `create-plan`
-
-This mode generates a detailed implementation plan based on a specification.
-
-```yaml
-- name: Run Prod-Mill Engine
-  uses: steve-keep/prodmill-engine@main
-  with:
-    mode: 'create-plan'
-    jules_api_key: ${{ secrets.JULES_API_KEY }}
-    issue_body: ${{ github.event.issue.body }}
-    issue_number: ${{ github.event.issue.number }}
-```
-
-### `create-tasks`
-
-This mode breaks down a specification into discrete development tasks.
-
-```yaml
-- name: Run Prod-Mill Engine
-  uses: steve-keep/prodmill-engine@main
-  with:
-    mode: 'create-tasks'
-    jules_api_key: ${{ secrets.JULES_API_KEY }}
-    issue_body: ${{ github.event.issue.body }}
-    issue_number: ${{ github.event.issue.number }}
-```
-
-### `update-constitution`
-
-This mode updates the project's constitution file based on an issue.
-
-```yaml
-- name: Run Prod-Mill Engine
-  uses: steve-keep/prodmill-engine@main
-  with:
-    mode: 'update-constitution'
-    jules_api_key: ${{ secrets.JULES_API_KEY }}
-    issue_body: ${{ github.event.issue.body }}
-    issue_number: ${{ github.event.issue.number }}
-```
+The `update-spec-list` and `next-task` workflows are run separately.
 
 ### `update-spec-list`
 
