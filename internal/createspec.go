@@ -15,7 +15,7 @@ func RunCreateSpec() error {
 		return fmt.Errorf("missing required input: issue_body")
 	}
 
-	specRegex := regexp.MustCompile(`(?s)### Product Specification\s*(.*)`)
+	specRegex := regexp.MustCompile(`(?s)Product Requirements & Goals\s*(.*)`)
 	specMatch := specRegex.FindStringSubmatch(issueBody)
 	if len(specMatch) < 2 {
 		return fmt.Errorf("could not find a Product Specification in the issue body")
