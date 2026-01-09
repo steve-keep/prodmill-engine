@@ -139,6 +139,9 @@ func updateIssueTemplate(filePath string, dirs []string) (bool, error) {
 
 
 func commitAndPush(files []string) error {
+	if err := runCommand("git", "config", "--global", "--add", "safe.directory", "/github/workspace"); err != nil {
+		return fmt.Errorf("git config safe.directory failed: %w", err)
+	}
 	if err := runCommand("git", "config", "--global", "user.name", "github-actions[bot]"); err != nil {
 		return fmt.Errorf("git config user.name failed: %w", err)
 	}
@@ -159,8 +162,10 @@ func commitAndPush(files []string) error {
 	return nil
 }
 
+var cmdExecutor = exec.Command
+
 func runCommand(name string, args ...string) error {
-	cmd := exec.Command(name, args...)
+	cmd := cmdExecutor(name, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()

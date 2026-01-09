@@ -2,6 +2,7 @@ package internal
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 )
@@ -68,5 +69,52 @@ body:
 	// You could add more assertions here to check the file content.
 }
 
-// Note: Testing commitAndPush directly is complex as it involves mocking git.
-// For this environment, we'll rely on the integration tests provided by the GitHub Action workflow.
+// TestCommitAndPushCommands tests that the correct git commands are called.
+func TestCommitAndPushCommands(t *testing.T) {
+	var commands [][]string
+	// Mock the command executor to capture the commands instead of running them.
+	cmdExecutor = func(name string, args ...string) *exec.Cmd {
+		commands = append(commands, append([]string{name}, args...))
+		// Return a dummy command that does nothing.
+		return exec.Command("true")
+	}
+	// Restore the original executor after the test.
+	defer func() { cmdExecutor = exec.Command }()
+
+	filesToCommit := []string{"file1.txt", "file2.txt"}
+	err := commitAndPush(filesToCommit)
+	if err != nil {
+		t.Fatalf("commitAndPush failed: %v", err)
+	}
+
+	expectedCommands := [][]string{
+		{"git", "config", "--global", "--add", "safe.directory", "/github/workspace"},
+		{"git", "config", "--global", "user.name", "github-actions[bot]"},
+		{"git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"},
+		{"git", "add", "file1.txt", "file2.txt"},
+		{"git", "commit", "-m", "docs: update spec dropdown in issue templates [skip ci]"},
+		{"git", "push"},
+	}
+
+	if len(commands) != len(expectedCommands) {
+		t.Fatalf("Expected %d commands, but got %d. Commands: %v", len(expectedCommands), len(commands), commands)
+	}
+
+	for i, expected := range expectedCommands {
+		if !equalSlices(commands[i], expected) {
+			t.Errorf("Command %d: Expected %v, but got %v", i, expected, commands[i])
+		}
+	}
+}
+
+func equalSlices(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
