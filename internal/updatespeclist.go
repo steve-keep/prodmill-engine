@@ -16,6 +16,15 @@ const (
 	createTasksTemplate = ".github/ISSUE_TEMPLATE/create-tasks.yml"
 )
 
+// IssueTemplate represents the structure of a GitHub issue template.
+type IssueTemplate struct {
+	Name        string        `yaml:"name,omitempty"`
+	Description string        `yaml:"description,omitempty"`
+	Title       string        `yaml:"title,omitempty"`
+	Labels      []string      `yaml:"labels,omitempty"`
+	Body        []interface{} `yaml:"body"`
+}
+
 // RunUpdateSpecList handles the logic for the 'update-spec-list' mode.
 func RunUpdateSpecList() error {
 	fmt.Println("Update spec list triggered!")
@@ -80,50 +89,49 @@ func updateIssueTemplate(filePath string, dirs []string) (bool, error) {
 		return false, err
 	}
 
-	var issueTemplate struct {
-		Body []struct {
-			ID         string `yaml:"id"`
-			Type       string `yaml:"type"`
-			Attributes struct {
-				Options []string `yaml:"options"`
-			} `yaml:"attributes"`
-		} `yaml:"body"`
-	}
-
+	var issueTemplate IssueTemplate
 	if err := yaml.Unmarshal(content, &issueTemplate); err != nil {
 		return false, fmt.Errorf("failed to unmarshal YAML: %w", err)
 	}
 
-	var dropdown *struct {
-		ID         string `yaml:"id"`
-		Type       string `yaml:"type"`
-		Attributes struct {
-			Options []string `yaml:"options"`
-		} `yaml:"attributes"`
-	}
+	var dropdownAltered bool
+	for i, item := range issueTemplate.Body {
+		if itemMap, ok := item.(map[string]interface{}); ok {
+			if id, ok := itemMap["id"].(string); ok && id == "spec" {
+				if attr, ok := itemMap["attributes"].(map[string]interface{}); ok {
+					if opts, ok := attr["options"].([]interface{}); ok {
+						currentOptions := make([]string, len(opts))
+						for i, v := range opts {
+							currentOptions[i] = fmt.Sprint(v)
+						}
 
-	for i := range issueTemplate.Body {
-		if issueTemplate.Body[i].ID == "spec" {
-			dropdown = &issueTemplate.Body[i]
-			break
+						sort.Strings(currentOptions)
+						sort.Strings(dirs)
+
+						if reflect.DeepEqual(currentOptions, dirs) {
+							fmt.Printf("Issue template %s is already up to date. Skipping update for this file.\n", filePath)
+							return false, nil
+						}
+
+						newOptions := make([]interface{}, len(dirs))
+						for i, v := range dirs {
+							newOptions[i] = v
+						}
+						attr["options"] = newOptions
+						issueTemplate.Body[i] = itemMap
+						dropdownAltered = true
+						break
+					}
+				}
+			}
 		}
 	}
 
-	if dropdown == nil {
-		fmt.Printf("No 'spec' dropdown found in %s. Skipping.\n", filePath)
+	if !dropdownAltered {
+		fmt.Printf("No 'spec' dropdown found or dropdown not altered in %s. Skipping.\n", filePath)
 		return false, nil
 	}
 
-	currentOptions := dropdown.Attributes.Options
-	sort.Strings(currentOptions)
-	sort.Strings(dirs)
-
-	if reflect.DeepEqual(currentOptions, dirs) {
-		fmt.Printf("Issue template %s is already up to date. Skipping update for this file.\n", filePath)
-		return false, nil
-	}
-
-	dropdown.Attributes.Options = dirs
 	updatedContent, err := yaml.Marshal(&issueTemplate)
 	if err != nil {
 		return false, fmt.Errorf("failed to marshal YAML: %w", err)
