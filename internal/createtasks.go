@@ -19,7 +19,7 @@ func RunCreateTasks() error {
 		return fmt.Errorf("missing required input: issue_number")
 	}
 
-	specNameRegex := regexp.MustCompile(`(?s)### Select Spec\s*\n\s*(.*?)\n\n`)
+	specNameRegex := regexp.MustCompile(`(?s)### Select Spec\s*\n\s*(.*?)\s*\n`)
 	specNameMatch := specNameRegex.FindStringSubmatch(issueBody)
 	if len(specNameMatch) < 2 {
 		return fmt.Errorf("could not find a Spec Name in the issue body")
