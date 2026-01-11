@@ -59,3 +59,41 @@ func TestRunNextTask(t *testing.T) {
 		t.Errorf("Expected RunNextTask to run without error, but got: %v", err)
 	}
 }
+
+// TestRunCreateTasks_ValidSpecName tests that RunCreateTasks can successfully parse a valid spec name.
+func TestRunCreateTasks_ValidSpecName(t *testing.T) {
+	// Set up the environment variables for the test
+	os.Setenv("INPUT_ISSUE_BODY", "### Select Spec\n\n001-hello-world\n\n")
+	os.Setenv("INPUT_ISSUE_NUMBER", "123")
+	os.Setenv("GITHUB_REPOSITORY", "test/repo")
+	// Unset JULES_API_KEY to prevent API call, we are only testing the parsing
+	os.Unsetenv("JULES_API_KEY")
+
+	err := RunCreateTasks()
+
+	// We expect an error because JULES_API_KEY is not set,
+	// but it should not be the "could not find a Spec Name" error.
+	expectedError := "missing required input: jules_api_key"
+	if err == nil || err.Error() != expectedError {
+		t.Errorf("Expected error '%s', but got: %v", expectedError, err)
+	}
+}
+
+// TestRunCreateTasks_ValidSpecNameOneNewline tests that RunCreateTasks can successfully parse a valid spec name with one newline.
+func TestRunCreateTasks_ValidSpecNameOneNewline(t *testing.T) {
+	// Set up the environment variables for the test
+	os.Setenv("INPUT_ISSUE_BODY", "### Select Spec\n001-hello-world\n")
+	os.Setenv("INPUT_ISSUE_NUMBER", "123")
+	os.Setenv("GITHUB_REPOSITORY", "test/repo")
+	// Unset JULES_API_KEY to prevent API call, we are only testing the parsing
+	os.Unsetenv("JULES_API_KEY")
+
+	err := RunCreateTasks()
+
+	// We expect an error because JULES_API_KEY is not set,
+	// but it should not be the "could not find a Spec Name" error.
+	expectedError := "missing required input: jules_api_key"
+	if err == nil || err.Error() != expectedError {
+		t.Errorf("Expected error '%s', but got: %v", expectedError, err)
+	}
+}
