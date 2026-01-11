@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 )
 
 // RunCreateTasks handles the logic for the 'create-tasks' mode.
@@ -19,12 +20,12 @@ func RunCreateTasks() error {
 		return fmt.Errorf("missing required input: issue_number")
 	}
 
-	specNameRegex := regexp.MustCompile(`(?s)### Select Spec\s*\n\s*(.*?)\s*\n`)
+	specNameRegex := regexp.MustCompile(`### Select Spec\s*\n\s*(.*)`)
 	specNameMatch := specNameRegex.FindStringSubmatch(issueBody)
 	if len(specNameMatch) < 2 {
 		return fmt.Errorf("could not find a Spec Name in the issue body")
 	}
-	specName := specNameMatch[1]
+	specName := strings.TrimSpace(specNameMatch[1])
 
 	repoID := os.Getenv("GITHUB_REPOSITORY")
 	if repoID == "" {
@@ -42,7 +43,7 @@ func RunCreateTasks() error {
 2. Read and execute ONLY FOLLOW THE INSTRUCTIONS IN THE FILE .gemini/commands/speckit.tasks.toml
 3. Create PR with only the steps from the above completed. Do not move on to the implementation phase this will be done is a seperate PR.
 
-This work is being done to address issue %s. The final pull request should reference this issue to ensure it is automatically closed.`,
+This work is being done to address issue #%s. The final pull request should reference this issue to ensure it is automatically closed.`,
 		specName,
 		issueNumber,
 	)
