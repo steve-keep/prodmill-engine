@@ -24,11 +24,11 @@ name: ProdMill
 
 on:
   issues:
-    types: [opened, labeled]
+    types: [opened]
 
 jobs:
   create-spec:
-    if: (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'create-spec')) || (github.event.action == 'labeled' && github.event.label.name == 'create-spec')
+    if: contains(github.event.issue.labels.*.name, 'create-spec')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -43,7 +43,7 @@ jobs:
           issue_number: ${{ github.event.issue.number }}
 
   create-plan:
-    if: (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'create-plan')) || (github.event.action == 'labeled' && github.event.label.name == 'create-plan')
+    if: contains(github.event.issue.labels.*.name, 'create-plan')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -58,7 +58,7 @@ jobs:
           issue_number: ${{ github.event.issue.number }}
 
   create-tasks:
-    if: (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'create-tasks')) || (github.event.action == 'labeled' && github.event.label.name == 'create-tasks')
+    if: contains(github.event.issue.labels.*.name, 'create-tasks')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -76,7 +76,7 @@ jobs:
           issue_number: ${{ github.event.issue.number }}
 
   update-constitution:
-    if: (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'update-constitution')) || (github.event.action == 'labeled' && github.event.label.name == 'update-constitution')
+    if: contains(github.event.issue.labels.*.name, 'update-constitution')
     runs-on: ubuntu-latest
     permissions:
       contents: write
